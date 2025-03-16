@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { motion, AnimatePresence } from "framer-motion";
 
 const FormField = ({
   label,
@@ -14,38 +15,83 @@ const FormField = ({
   required,
   readOnly,
   value,
+  className,
   ...props
 }) => {
   const [dateValue, setDateValue] = useState(value || null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedOption, setSelectedOption] = useState(value || "");
+
+  const dropdownVariants = {
+    hidden: { opacity: 0, y: -10 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { 
+        duration: 0.2,
+        ease: "easeInOut"
+      }
+    },
+    exit: { 
+      opacity: 0, 
+      y: -10,
+      transition: { 
+        duration: 0.2 
+      }
+    }
+  };
+
+  const handleSelect = (option) => {
+    setSelectedOption(option.label);
+    register(name).onChange({ target: { name, value: option.value } });
+    if (onChange) onChange({ target: { value: option.value } });
+    setIsOpen(false);
+  };
 
   return (
-    <div className="mb-4">
-      <label
-        htmlFor={name}
-        className="block text-sm font-semibold text-gray-700 mb-2"
-      >
-        {label}
-        {required && <span className="text-red-500 ml-1">*</span>}
-      </label>
+    <div className={`mb-4 ${className || ''}`}>
+      {label && (
+        <label
+          htmlFor={name}
+          className="block text-sm font-semibold text-gray-700 mb-2"
+        >
+          {label}
+          {required && <span className="text-red-500 ml-1">*</span>}
+        </label>
+      )}
 
       {type === "select" ? (
         <div className="relative">
-          <select
-            id={name}
-            {...register(name, { required: required && "This field is required" })}
-            onChange={onChange}
-            className="w-full p-2 border rounded bg-gray-100 text-gray-800 appearance-none focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-200"
-            disabled={readOnly}
+          <div
+            className="w-full p-2 border rounded bg-gray-100 text-gray-800 cursor-pointer flex justify-between items-center focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            onClick={() => setIsOpen(!isOpen)}
           >
-            {options.map((option, index) => (
-              <option key={index} value={option.value || option}>
-                {option.label || option}
-              </option>
-            ))}
-          </select>
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none">
-            ▼
-          </span>
+            <span>{selectedOption || placeholder || "Select an option"}</span>
+            <span className="text-gray-600">▼</span>
+          </div>
+          
+          <AnimatePresence>
+            {isOpen && (
+              <motion.div
+                variants={dropdownVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="absolute z-10 w-full mt-1 bg-white border rounded shadow-lg max-h-60 overflow-y-auto"
+              >
+                {options.map((option, index) => (
+                  <motion.div
+                    key={index}
+                    whileHover={{ backgroundColor: "#f3f4f6" }}
+                    className="p-2 cursor-pointer text-gray-800"
+                    onClick={() => handleSelect(option)}
+                  >
+                    {option.label || option}
+                  </motion.div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       ) : type === "date" || type === "datetime-local" ? (
         <DatePicker
@@ -58,7 +104,7 @@ const FormField = ({
           }}
           showTimeSelect={type === "datetime-local"}
           dateFormat={type === "datetime-local" ? "yyyy-MM-dd HH:mm" : "yyyy-MM-dd"}
-          placeholderText={placeholder}
+          placeholderText={placeholder || "Select date"}
           className="w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-gray-400"
           required={required}
         />
@@ -81,7 +127,7 @@ const FormField = ({
         <input
           id={name}
           type={type}
-          placeholder={placeholder}
+          placeholder={placeholder || `Enter ${label?.toLowerCase() || 'value'}`}
           {...register(name, { required: required && "This field is required" })}
           onChange={onChange}
           className="w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-200"

@@ -31,9 +31,11 @@ const CreateInvoice = () => {
   const [taxes, setTaxes] = useState([]);
   const [products, setProducts] = useState([]);
   const [services, setServices] = useState([]);
-
-  const [invoiceItems, setInvoiceItems] = useState([]);
+  const [invoiceItems, setInvoiceItems] = useState([
+    { itemName: "", quantity: 1, unitCost: 0, itemGst: "0%", total: 0, item_type: "" },
+  ]);
   const [taxable, setTaxable] = useState("no");
+  const [selectedTaxRate, setSelectedTaxRate] = useState("0%");
   const [invoiceType, setInvoiceType] = useState("");
 
   useEffect(() => {
@@ -64,7 +66,7 @@ const CreateInvoice = () => {
   const addItem = () => {
     setInvoiceItems([
       ...invoiceItems,
-      { itemName: "", quantity: 1, unitCost: 0, itemGst: "0%", total: 0 },
+      { itemName: "", quantity: 1, unitCost: 0, itemGst: "0%", total: 0, item_type: invoiceType },
     ]);
   };
 
@@ -85,23 +87,29 @@ const CreateInvoice = () => {
       } else {
         updatedItems[index].unitCost = updatedItems[index].unitCost || 0;
       }
+      updatedItems[index].item_type = invoiceType;
     }
 
-    const taxRate = parseFloat(updatedItems[index].itemGst) / 100;
-    updatedItems[index].total =
-      updatedItems[index].quantity * updatedItems[index].unitCost * (1 + taxRate);
+    if (field === "quantity") {
+      updatedItems[index].quantity = parseInt(value) || 1;
+    }
+
+    const taxRate = parseFloat(selectedTaxRate) / 100;
+    const baseTotal = updatedItems[index].quantity * updatedItems[index].unitCost;
+    updatedItems[index].itemGst = (baseTotal * taxRate).toFixed(2);
+    updatedItems[index].total = (baseTotal + parseFloat(updatedItems[index].itemGst)).toFixed(2);
     setInvoiceItems(updatedItems);
   };
 
   const calculateTotals = () => {
     const subtotal = invoiceItems.reduce(
-      (sum, item) => sum + item.quantity * item.unitCost,
+      (sum, item) => sum + (item.quantity * item.unitCost),
       0
     );
-    const totalTax = invoiceItems.reduce((sum, item) => {
-      const taxRate = parseFloat(item.itemGst) / 100;
-      return sum + item.quantity * item.unitCost * taxRate;
-    }, 0);
+    const totalTax = invoiceItems.reduce(
+      (sum, item) => sum + parseFloat(item.itemGst || 0),
+      0
+    );
     const shipping = parseFloat(watch("shipping")) || 0;
     const discount = parseFloat(watch("discount")) || 0;
     const amountPaid = parseFloat(watch("amountPaid")) || 0;
@@ -116,28 +124,58 @@ const CreateInvoice = () => {
 
   useEffect(() => {
     calculateTotals();
-  }, [invoiceItems, watch("shipping"), watch("discount"), watch("amountPaid")]);
+  }, [invoiceItems, watch("shipping"), watch("discount"), watch("amountPaid"), selectedTaxRate]);
 
   const onSubmit = async (data) => {
     try {
       const invoiceData = {
-        ...data,
-        items: invoiceItems,
-        subtotal: parseFloat(data.subtotal),
-        totalTax: parseFloat(data.totalTax),
-        shipping: parseFloat(data.shipping),
-        discount: parseFloat(data.discount),
-        amountPaid: parseFloat(data.amountPaid),
-        totalDue: parseFloat(data.totalDue),
-        createdAt: new Date().toISOString(),
+        invoice_type: data.invoiceType,
+        client: parseInt(data.clientName),
+        branch_address: parseInt(data.branchAddress),
+        bank_account: parseInt(data.bankAccount),
+        invoice_date: data.invoiceDate,
+        due_date: data.dueDate,
+        currency_type: data.currencyType,
+        payment_terms: data.paymentTerms,
+        tax_option: data.taxable,
+        tax_rate: data.taxable === "yes" ? parseFloat(selectedTaxRate) : null,
+        discount: parseFloat(data.discount).toString() || "0.00",
+        shipping: parseFloat(data.shipping).toString() || "0.00",
+        amount_paid: parseFloat(data.amountPaid).toString() || "0.00",
+        items: [],
       };
 
-      await apiClient.post("/add_createinvoice/", invoiceData);
-      alert("Invoice created successfully!");
-      navigate("/");
+      console.log("Invoice Data:", JSON.stringify(invoiceData, null, 2));
+
+      const invoiceResponse = await apiClient.post("invoices/invoices/", invoiceData);
+      const invoiceId = invoiceResponse.data.id;
+      console.log("Invoice Created:", invoiceResponse.data);
+
+      const itemPromises = invoiceItems.map(async (item) => {
+        const itemData = {
+          invoice: invoiceId,
+          item_type: item.item_type || data.invoiceType,
+          product: data.invoiceType === "product" ? (products.find(p => p.name === item.itemName)?.id || null) : null,
+          name: data.invoiceType === "service" ? item.itemName : null,
+          quantity: item.quantity,
+          unit_cost: item.unitCost.toString(),
+        };
+
+        console.log("Item Data:", JSON.stringify(itemData, null, 2));
+        return apiClient.post("invoices/invoice-items/", itemData);
+      });
+
+      await Promise.all(itemPromises);
+      console.log("All items created successfully");
+
+      const updatedInvoiceResponse = await apiClient.get(`invoices/invoices/${invoiceId}/`);
+      console.log("Updated Invoice:", JSON.stringify(updatedInvoiceResponse.data, null, 2));
+
+      alert("Invoice and items created successfully!");
+      navigate("/invoice/proforma");
     } catch (error) {
-      console.error("Error submitting invoice:", error);
-      alert("Failed to create invoice. Please try again.");
+      console.error("Error submitting invoice or items:", error.response?.data || error.message);
+      alert("Failed to create invoice or items. Please check the console for details.");
     }
   };
 
@@ -164,6 +202,7 @@ const CreateInvoice = () => {
               name="invoiceNumber"
               register={register}
               error={errors.invoiceNumber}
+              placeholder="Enter invoice number"
               required
             />
             <FormField
@@ -172,11 +211,12 @@ const CreateInvoice = () => {
               register={register}
               type="select"
               options={[
-                { value: "", label: "Select Type" },
+                { value: "", label: "Select Invoice Type" },
                 { value: "product", label: "Product" },
                 { value: "service", label: "Service" },
               ]}
               onChange={(e) => setInvoiceType(e.target.value)}
+              placeholder="Select invoice type"
               required
             />
             <FormField
@@ -197,38 +237,51 @@ const CreateInvoice = () => {
                 name="taxRate"
                 register={register}
                 type="select"
-                options={taxes.map((tax) => ({
-                  value: tax.percentage,
-                  label: `${tax.percentage}%`,
-                }))}
+                options={[
+                  { value: "", label: "Select Tax Rate" },
+                  ...taxes.map((tax) => ({
+                    value: tax.percentage,
+                    label: `${tax.percentage}%`,
+                  })),
+                ]}
+                onChange={(e) => setSelectedTaxRate(e.target.value)}
+                placeholder="Select tax rate"
               />
             )}
             <FormField
               label="Branch"
               name="branchAddress"
               type="select"
-              options={branches.map((b) => ({
-                value: b.id,
-                label: `${b.branch_address} - ${b.city}`,
-              }))}
+              options={[
+                { value: "", label: "Select Branch" },
+                ...branches.map((b) => ({
+                  value: b.id,
+                  label: `${b.branch_address} - ${b.city}`,
+                })),
+              ]}
               register={register}
+              placeholder="Select branch"
               required
             />
             <FormField
               label="Client"
               name="clientName"
               type="select"
-              options={clients.map((c) => ({
-                value: c.id,
-                label: `${c.client_name}, ${c.country}, ${c.state}, ${c.city}, ${c.address}, ${c.phone}, ${c.tax_type}, ${c.gst}, ${c.vat}, ${c.website}, ${c.invoice_series}, ${c.status} `,
-              }))}
+              options={[
+                { value: "", label: "Select Client" },
+                ...clients.map((c) => ({
+                  value: c.id,
+                  label: `${c.client_name}, ${c.country}, ${c.state}, ${c.city}, ${c.address}, ${c.phone}, ${c.tax_type}, ${c.gst}, ${c.vat}, ${c.website}, ${c.invoice_series}, ${c.status}`,
+                })),
+              ]}
               register={register}
+              placeholder="Select client"
               required
             />
             <div className="flex items-center justify-between gap-4">
               <FormField
                 label="Invoice Date"
-                placeholder="Invoice Date"
+                placeholder="Select invoice date"
                 type="date"
                 name="invoiceDate"
                 register={register}
@@ -237,7 +290,7 @@ const CreateInvoice = () => {
               />
               <FormField
                 label="Due Date"
-                placeholder="Due Date"
+                placeholder="Select due date"
                 type="date"
                 name="dueDate"
                 register={register}
@@ -249,19 +302,27 @@ const CreateInvoice = () => {
               label="Bank Account"
               name="bankAccount"
               type="select"
-              options={bankAccounts.map((a) => ({
-                value: a.id,
-                label: `${a.bank_name} (${a.account_number})`,
-              }))}
+              options={[
+                { value: "", label: "Select Bank Account" },
+                ...bankAccounts.map((a) => ({
+                  value: a.id,
+                  label: `${a.bank_name} (${a.account_number})`,
+                })),
+              ]}
               register={register}
+              placeholder="Select bank account"
               required
             />
             <FormField
               label="Currency Type"
               name="currencyType"
               type="select"
-              options={["USD", "EUR", "GBP", "INR"].map((c) => ({ value: c, label: c }))}
+              options={[
+                { value: "", label: "Select Currency" },
+                ...["USD", "EUR", "GBP", "INR"].map((c) => ({ value: c, label: c })),
+              ]}
               register={register}
+              placeholder="Select currency"
             />
           </div>
 
@@ -270,15 +331,18 @@ const CreateInvoice = () => {
               label="Payment Terms"
               name="paymentTerms"
               type="select"
-              options={["Credit", "Debit", "UPI", "Net Banking"].map((t) => ({ value: t, label: t }))}
+              options={[
+                { value: "", label: "Select Payment Terms" },
+                ...["Credit", "Debit", "UPI", "Net Banking"].map((t) => ({ value: t, label: t })),
+              ]}
               register={register}
+              placeholder="Select payment terms"
             />
 
             {invoiceType && (
               <div>
                 <h3 className="font-bold text-sm mb-2 text-gray-700">Invoice Items</h3>
                 <div className="rounded-lg">
-                  {/* Header Row */}
                   <div className="grid grid-cols-12 gap-2 mb-2 font-semibold text-gray-700 text-sm">
                     <div className="col-span-3">Item Name</div>
                     <div className="col-span-2">Quantity</div>
@@ -288,30 +352,33 @@ const CreateInvoice = () => {
                     <div className="col-span-1"></div>
                   </div>
 
-                  {/* Invoice Items */}
                   {invoiceItems.map((item, index) => (
                     <div
                       key={index}
                       className="grid grid-cols-12 gap-2 mb-4 items-center"
                     >
-                      <select
-                        className="w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 col-span-3"
-                        value={item.itemName}
+                      <FormField
+                        name={`itemName-${index}`}
+                        type="select"
+                        register={register}
+                        options={[
+                          { value: "", label: "Select Item" },
+                          ...(invoiceType === "product" ? products : services).map((prod) => ({
+                            value: prod.name,
+                            label: `${prod.name} (${invoiceType === "product" ? prod.unit_cost || prod.price : prod.rate} ${selectedCurrency})`,
+                          })),
+                        ]}
                         onChange={(e) => updateItem(index, "itemName", e.target.value)}
-                      >
-                        <option value="">Select Item</option>
-                        {(invoiceType === "product" ? products : services).map((prod) => (
-                          <option key={prod.id} value={prod.name}>
-                            {prod.name} ({invoiceType === "product" ? prod.unit_cost || prod.price : prod.rate} {selectedCurrency})
-                          </option>
-                        ))}
-                      </select>
+                        value={item.itemName}
+                        className="col-span-3"
+                      />
 
                       <input
                         className="w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 col-span-2"
                         type="number"
                         min="1"
                         value={item.quantity}
+                        placeholder="Enter quantity"
                         onChange={(e) =>
                           updateItem(index, "quantity", parseInt(e.target.value) || 1)
                         }
@@ -325,28 +392,27 @@ const CreateInvoice = () => {
                         min="0"
                         step="0.01"
                         value={item.unitCost}
+                        placeholder="Enter unit cost"
                         onChange={(e) =>
-                          invoiceType === "service" && 
+                          invoiceType === "service" &&
                           updateItem(index, "unitCost", parseFloat(e.target.value) || 0)
                         }
                         readOnly={invoiceType === "product" && item.itemName !== ""}
                       />
 
-                      {/* Item GST as Input Field */}
                       <input
                         className="w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 col-span-2"
-                        type="number"
-                        min="0"
-                        step="0.01"
+                        type="text"
                         value={item.itemGst}
-                        onChange={(e) => updateItem(index, "itemGst", e.target.value)}
-                        placeholder="Item GST %"
+                        placeholder="GST"
+                        readOnly
                       />
 
                       <input
                         className="w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 col-span-2"
                         type="number"
-                        value={item.total.toFixed(2)}
+                        value={item.total}
+                        placeholder="Total"
                         readOnly
                       />
 
@@ -389,27 +455,39 @@ const CreateInvoice = () => {
                 name="shipping"
                 type="number"
                 register={register}
-                placeholder="0.00"
+                placeholder="Enter shipping cost"
                 min="0"
                 step="0.01"
+                onChange={(e) => {
+                  setValue("shipping", e.target.value);
+                  calculateTotals();
+                }}
               />
               <FormField
                 label="Discount"
                 name="discount"
                 type="number"
                 register={register}
-                placeholder="0.00"
+                placeholder="Enter discount"
                 min="0"
                 step="0.01"
+                onChange={(e) => {
+                  setValue("discount", e.target.value);
+                  calculateTotals();
+                }}
               />
               <FormField
                 label="Amount Paid"
                 name="amountPaid"
                 type="number"
                 register={register}
-                placeholder="0.00"
+                placeholder="Enter amount paid"
                 min="0"
                 step="0.01"
+                onChange={(e) => {
+                  setValue("amountPaid", e.target.value);
+                  calculateTotals();
+                }}
               />
               <div className="flex justify-between border-t pt-2">
                 <span className="text-sm font-bold text-gray-700">Total Due:</span>
