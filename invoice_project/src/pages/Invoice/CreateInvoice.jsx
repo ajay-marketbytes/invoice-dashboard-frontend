@@ -1,14 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import apiClient from "../../api/apiClient";
 import FormField from "../../components/FormField";
 
 const CreateInvoice = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const existingInvoice = location.state?.invoice || null;
-
   const {
     register,
     handleSubmit,
@@ -16,32 +13,16 @@ const CreateInvoice = () => {
     setValue,
     formState: { errors, isSubmitting },
   } = useForm({
-    defaultValues: existingInvoice
-      ? {
-          invoiceNumber: existingInvoice.invoice_number,
-          invoiceType: existingInvoice.invoice_type,
-          clientName: existingInvoice.client.toString(),
-          branchAddress: existingInvoice.branch_address.toString(),
-          bankAccount: existingInvoice.bank_account.toString(),
-          invoiceDate: existingInvoice.invoice_date,
-          dueDate: existingInvoice.due_date,
-          currencyType: existingInvoice.currency_type,
-          paymentTerms: existingInvoice.payment_terms,
-          taxable: existingInvoice.tax_option,
-          discount: parseFloat(existingInvoice.discount),
-          shipping: parseFloat(existingInvoice.shipping),
-          amountPaid: parseFloat(existingInvoice.amount_paid),
-        }
-      : {
-          invoiceNumber: `INV-${Date.now()}`,
-          invoiceDate: new Date().toISOString().split("T")[0],
-          taxable: "no",
-          currencyType: "USD",
-          paymentTerms: "Net 30",
-          discount: 0,
-          shipping: 0,
-          amountPaid: 0,
-        },
+    defaultValues: {
+      invoiceNumber: `INV-${Date.now()}`,
+      invoiceDate: new Date().toISOString().split("T")[0],
+      taxable: "no",
+      currencyType: "USD",
+      paymentTerms: "Net 30",
+      discount: 0,
+      shipping: 0,
+      amountPaid: 0,
+    },
   });
 
   const [clients, setClients] = useState([]);
@@ -50,23 +31,12 @@ const CreateInvoice = () => {
   const [taxes, setTaxes] = useState([]);
   const [products, setProducts] = useState([]);
   const [services, setServices] = useState([]);
-  const [invoiceItems, setInvoiceItems] = useState(
-    existingInvoice && existingInvoice.items.length > 0
-      ? existingInvoice.items.map((item) => ({
-          itemName: item.name,
-          quantity: item.quantity,
-          unitCost: parseFloat(item.unit_cost),
-          itemGst: item.total_gst.toString(),
-          total: item.total.toString(),
-          item_type: item.item_type,
-        }))
-      : [{ itemName: "", quantity: 1, unitCost: 0, itemGst: "0%", total: 0, item_type: "" }]
-  );
-  const [taxable, setTaxable] = useState(existingInvoice ? existingInvoice.tax_option : "no");
-  const [selectedTaxRate, setSelectedTaxRate] = useState(
-    existingInvoice && existingInvoice.tax_rate ? existingInvoice.tax_rate.toString() : "0%"
-  );
-  const [invoiceType, setInvoiceType] = useState(existingInvoice ? existingInvoice.invoice_type : "");
+  const [invoiceItems, setInvoiceItems] = useState([
+    { itemName: "", quantity: 1, unitCost: 0, itemGst: "0%", total: 0, item_type: "" },
+  ]);
+  const [taxable, setTaxable] = useState("no");
+  const [selectedTaxRate, setSelectedTaxRate] = useState("0%");
+  const [invoiceType, setInvoiceType] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -172,36 +142,40 @@ const CreateInvoice = () => {
         discount: parseFloat(data.discount).toString() || "0.00",
         shipping: parseFloat(data.shipping).toString() || "0.00",
         amount_paid: parseFloat(data.amountPaid).toString() || "0.00",
-        items: invoiceItems.map((item) => ({
+        items: [],
+      };
+
+      console.log("Invoice Data:", JSON.stringify(invoiceData, null, 2));
+
+      const invoiceResponse = await apiClient.post("invoices/invoices/", invoiceData);
+      const invoiceId = invoiceResponse.data.id;
+      console.log("Invoice Created:", invoiceResponse.data);
+
+      const itemPromises = invoiceItems.map(async (item) => {
+        const itemData = {
+          invoice: invoiceId,
           item_type: item.item_type || data.invoiceType,
           product: data.invoiceType === "product" ? (products.find(p => p.name === item.itemName)?.id || null) : null,
           name: data.invoiceType === "service" ? item.itemName : null,
           quantity: item.quantity,
           unit_cost: item.unitCost.toString(),
-        })),
-      };
+        };
 
-      console.log("Invoice Data:", JSON.stringify(invoiceData, null, 2));
+        console.log("Item Data:", JSON.stringify(itemData, null, 2));
+        return apiClient.post("invoices/invoice-items/", itemData);
+      });
 
-      let invoiceId;
-      if (existingInvoice) {
-        const response = await apiClient.put(`invoices/invoices/${existingInvoice.id}/`, invoiceData);
-        invoiceId = response.data.id;
-        console.log("Invoice Updated:", response.data);
-      } else {
-        const response = await apiClient.post("invoices/invoices/", invoiceData);
-        invoiceId = response.data.id;
-        console.log("Invoice Created:", response.data);
-      }
+      await Promise.all(itemPromises);
+      console.log("All items created successfully");
 
       const updatedInvoiceResponse = await apiClient.get(`invoices/invoices/${invoiceId}/`);
       console.log("Updated Invoice:", JSON.stringify(updatedInvoiceResponse.data, null, 2));
 
-      alert(existingInvoice ? "Invoice updated successfully!" : "Invoice and items created successfully!");
+      alert("Invoice and items created successfully!");
       navigate("/invoice/proforma");
     } catch (error) {
       console.error("Error submitting invoice or items:", error.response?.data || error.message);
-      alert("Failed to create or update invoice. Please check the console for details.");
+      alert("Failed to create invoice or items. Please check the console for details.");
     }
   };
 
@@ -215,7 +189,7 @@ const CreateInvoice = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-8">
       <div className="bg-white p-8 rounded-lg shadow-xl w-full">
         <h2 className="text-2xl font-extrabold mb-6 text-gray-800 text-center">
-          {existingInvoice ? "Edit Invoice" : "Create New Invoice"}
+          Create New Invoice
         </h2>
 
         <form
@@ -230,7 +204,6 @@ const CreateInvoice = () => {
               error={errors.invoiceNumber}
               placeholder="Enter invoice number"
               required
-              disabled={!!existingInvoice} // Disable editing invoice number if updating
             />
             <FormField
               label="Invoice Type"
@@ -533,7 +506,7 @@ const CreateInvoice = () => {
               isSubmitting ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
-            {isSubmitting ? "Saving..." : existingInvoice ? "Update Invoice" : "Create Invoice"}
+            {isSubmitting ? "Creating..." : "Create Invoice"}
           </button>
         </form>
         <div className="mt-4 flex justify-start space-x-4">

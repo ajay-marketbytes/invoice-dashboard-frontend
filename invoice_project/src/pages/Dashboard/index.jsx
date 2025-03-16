@@ -17,8 +17,8 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        // const invoiceResponse = await apiClient.get("");
-        // setInvoiceCount(invoiceResponse.data.length);
+        const invoiceResponse = await apiClient.get("invoices/invoices/");
+        setInvoiceCount(invoiceResponse.data.length);
 
         const productResponse = await apiClient.get("products/products/");
         setProductCount(productResponse.data.length);
@@ -59,11 +59,11 @@ const Dashboard = () => {
   return (
     <div className="p-8 grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
       <h1 className="text-2xl font-bold mb-4 col-span-full">Dashboard</h1>
-      {/* <CountCard
+      <CountCard
         title="Invoices"
         subtitle="Total number of invoices"
         count={invoiceCount}
-      /> */}
+      />
       <CountCard
         title="Products"
         subtitle="Total number of products"
