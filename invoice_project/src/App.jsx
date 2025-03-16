@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import CreateInvoice from "./pages/Invoice/CreateInvoice";
+import EditInvoice from "./pages/Invoice/EditInvoice"; // Add this import
 import ProformaInvoice from "./pages/Invoice/ProformaInvoice";
 import FinalInvoice from "./pages/Invoice/FinalInvoice";
 import InvoiceNote from "./pages/Invoice/InvoiceNote";
@@ -63,6 +64,7 @@ function App() {
         >
           <Route index element={<Dashboard />} />
           <Route path="/invoice/create" element={<CreateInvoice />} />
+          <Route path="/invoice/edit" element={<EditInvoice />} />
           <Route path="/invoice/proforma" element={<ProformaInvoice />} />
           <Route path="/invoice/final" element={<FinalInvoice />} />
           <Route path="/invoice/invoice-note" element={<InvoiceNote />} />

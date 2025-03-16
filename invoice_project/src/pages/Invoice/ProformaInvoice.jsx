@@ -38,13 +38,14 @@ const ProformaInvoice = () => {
         setIsModalOpen(false);
         alert("Invoice deleted successfully!");
       } catch (error) {
+        console.error("Error deleting invoice:", error);
         alert("Failed to delete invoice. Please try again.");
       }
     }
   };
 
   const handleEdit = (invoice) => {
-    navigate("/invoice/create", { state: { invoice } });
+    navigate("/invoice/edit", { state: { invoice } });
   };
 
   const handleMoveToFinal = (invoice) => {
@@ -64,7 +65,7 @@ const ProformaInvoice = () => {
       <h1 className="text-center text-3xl font-bold mb-8 text-gray-800">
         Proforma Invoices
       </h1>
-      <div className="p-6">
+      <div className="px-6 pb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {invoices.map((invoice) => (
             <div

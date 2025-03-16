@@ -3,7 +3,7 @@ import { useLocation } from "react-router-dom";
 
 const FinalInvoice = () => {
   const location = useLocation();
-  const invoice = location.state?.invoice || null;
+  const invoice = location.state?.invoice;
 
   if (!invoice) {
     return <p className="text-center text-red-600">No invoice data provided.</p>;
@@ -12,9 +12,9 @@ const FinalInvoice = () => {
   return (
     <div className="container mx-auto mt-10 px-4">
       <h1 className="text-center text-3xl font-bold mb-8 text-gray-800">
-        Final Invoice #{invoice.invoice_number}
+        Final Invoice: {invoice.invoice_number}
       </h1>
-      <div className="bg-white p-6 rounded-lg shadow-md max-w-2xl mx-auto">
+      <div className="bg-white p-6 rounded-lg shadow-xl">
         <div className="space-y-2">
           <p><strong>Client ID:</strong> {invoice.client}</p>
           <p><strong>Branch Address ID:</strong> {invoice.branch_address}</p>
