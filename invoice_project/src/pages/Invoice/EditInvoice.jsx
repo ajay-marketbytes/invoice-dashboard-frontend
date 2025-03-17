@@ -211,7 +211,7 @@ const EditInvoice = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-8">
-      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-4xl">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-6xl">
         <h2 className="text-2xl font-extrabold mb-6 text-gray-800 text-center">
           Edit Invoice: {invoice?.invoice_number}
         </h2>
