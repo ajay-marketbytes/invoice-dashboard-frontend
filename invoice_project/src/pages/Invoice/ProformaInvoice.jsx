@@ -6,24 +6,50 @@ import { useNavigate } from "react-router-dom";
 const ProformaInvoice = () => {
   const navigate = useNavigate();
   const [invoices, setInvoices] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [bankAccounts, setBankAccounts] = useState([]); // Added for bank accounts
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchInvoices = async () => {
+    const fetchData = async () => {
       try {
-        const response = await apiClient.get("invoices/invoices/");
-        setInvoices(response.data);
+        const [invoicesResponse, clientsResponse, branchesResponse, bankAccountsResponse] = await Promise.all([
+          apiClient.get("invoices/invoices/"),
+          apiClient.get("clients/clients/"),
+          apiClient.get("branch/branch_addresses/"),
+          apiClient.get("bank/bank-accounts/"), // Fetch bank accounts
+        ]);
+        setInvoices(invoicesResponse.data);
+        setClients(clientsResponse.data);
+        setBranches(branchesResponse.data);
+        setBankAccounts(bankAccountsResponse.data);
         setLoading(false);
       } catch (err) {
-        setError("Failed to fetch invoices. Please try again later.");
+        setError("Failed to fetch data. Please try again later.");
         setLoading(false);
       }
     };
-    fetchInvoices();
+    fetchData();
   }, []);
+
+  const getClientName = (clientId) => {
+    const client = clients.find((c) => c.id === clientId);
+    return client ? client.client_name : `Client ID: ${clientId}`;
+  };
+
+  const getBranchName = (branchId) => {
+    const branch = branches.find((b) => b.id === branchId);
+    return branch ? `${branch.branch_address} - ${branch.city}` : `Branch ID: ${branchId}`;
+  };
+
+  const getBankAccountDetails = (bankAccountId) => {
+    const bankAccount = bankAccounts.find((ba) => ba.id === bankAccountId);
+    return bankAccount ? `${bankAccount.bank_name} (${bankAccount.account_number})` : `Bank Account ID: ${bankAccountId}`;
+  };
 
   const handleView = (invoice) => {
     setSelectedInvoice(invoice);
@@ -65,7 +91,7 @@ const ProformaInvoice = () => {
       <h1 className="text-center text-3xl font-bold mb-8 text-gray-800">
         Proforma Invoices
       </h1>
-      <div className="px-6 pb-6">
+      <div className="p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {invoices.map((invoice) => (
             <div
@@ -78,12 +104,18 @@ const ProformaInvoice = () => {
                   <h5 className="text-lg font-semibold text-gray-800">
                     Invoice {invoice.invoice_number}
                   </h5>
-                  <p className="text-sm text-gray-500">Client ID: {invoice.client}</p>
+                  <p className="text-sm text-gray-500">{getClientName(invoice.client)}</p>
                 </div>
               </div>
               <div className="space-y-2">
                 <p className="text-sm text-gray-600">
                   <span className="font-medium">Date:</span> {invoice.invoice_date}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Branch:</span> {getBranchName(invoice.branch_address)}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <span className="font-medium">Bank:</span> {getBankAccountDetails(invoice.bank_account)}
                 </p>
                 <p className="text-sm text-gray-600">
                   <span className="font-medium">Type:</span>{" "}
@@ -117,7 +149,6 @@ const ProformaInvoice = () => {
         </div>
       </div>
 
-      {/* Modal for Invoice Details */}
       {isModalOpen && selectedInvoice && (
         <div className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[70vh] overflow-y-auto">
@@ -125,9 +156,9 @@ const ProformaInvoice = () => {
               Invoice: {selectedInvoice.invoice_number}
             </h2>
             <div className="space-y-2">
-              <p><strong>Client ID:</strong> {selectedInvoice.client}</p>
-              <p><strong>Branch Address ID:</strong> {selectedInvoice.branch_address}</p>
-              <p><strong>Bank Account ID:</strong> {selectedInvoice.bank_account}</p>
+              <p><strong>Client:</strong> {getClientName(selectedInvoice.client)}</p>
+              <p><strong>Branch:</strong> {getBranchName(selectedInvoice.branch_address)}</p>
+              <p><strong>Bank Account:</strong> {getBankAccountDetails(selectedInvoice.bank_account)}</p>
               <p><strong>Invoice Date:</strong> {selectedInvoice.invoice_date}</p>
               <p><strong>Due Date:</strong> {selectedInvoice.due_date}</p>
               <p><strong>Currency:</strong> {selectedInvoice.currency_type}</p>
@@ -142,7 +173,6 @@ const ProformaInvoice = () => {
               <p><strong>Total Due:</strong> {selectedInvoice.total_due} {selectedInvoice.currency_type}</p>
             </div>
 
-            {/* Items Table */}
             {selectedInvoice.items.length > 0 && (
               <div className="mt-4">
                 <h3 className="text-lg font-semibold text-gray-700">Items</h3>
@@ -171,7 +201,6 @@ const ProformaInvoice = () => {
               </div>
             )}
 
-            {/* Modal Buttons */}
             <div className="mt-6 flex justify-end space-x-4">
               <button
                 className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-md font-semibold text-sm hover:bg-blue-600 transition-colors"

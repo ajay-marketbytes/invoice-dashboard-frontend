@@ -28,10 +28,10 @@ const EditInvoice = () => {
           currencyType: invoice.currency_type,
           paymentTerms: invoice.payment_terms,
           taxable: invoice.tax_option,
-          taxRate: invoice.tax_rate ? invoice.tax_rate.toString() : "", // Added for Tax Rate
-          discount: parseFloat(invoice.discount),
-          shipping: parseFloat(invoice.shipping),
-          amountPaid: parseFloat(invoice.amount_paid),
+          taxRate: invoice.tax_rate ? invoice.tax_rate.toString() : "",
+          discount: parseFloat(invoice.discount || "0.00"),
+          shipping: parseFloat(invoice.shipping || "0.00"),
+          amountPaid: parseFloat(invoice.amount_paid || "0.00"),
         }
       : {
           invoiceNumber: `INV-${Date.now()}`,
@@ -52,12 +52,13 @@ const EditInvoice = () => {
   const [products, setProducts] = useState([]);
   const [services, setServices] = useState([]);
   const [invoiceItems, setInvoiceItems] = useState(
-    invoice?.items.map((item) => ({
-      itemName: item.name,
+    invoice?.items?.map((item) => ({
+      id: item.id, // Preserve item ID for updates
+      itemName: item.name || (products.find(p => p.id === item.product)?.name || ""),
       quantity: item.quantity,
       unitCost: parseFloat(item.unit_cost),
-      itemGst: item.total_gst.toString(),
-      total: item.total.toString(),
+      itemGst: item.total_gst ? item.total_gst.toString() : "0",
+      total: item.total ? item.total.toString() : "0",
       item_type: item.item_type,
     })) || [
       { itemName: "", quantity: 1, unitCost: 0, itemGst: "0%", total: 0, item_type: "" },
@@ -95,7 +96,6 @@ const EditInvoice = () => {
   }, []);
 
   useEffect(() => {
-    // Sync taxable and taxRate with form values
     setTaxable(watch("taxable"));
     setSelectedTaxRate(watch("taxRate") || "0%");
     setInvoiceType(watch("invoiceType"));
@@ -181,16 +181,17 @@ const EditInvoice = () => {
         shipping: parseFloat(data.shipping).toString() || "0.00",
         amount_paid: parseFloat(data.amountPaid).toString() || "0.00",
         items: invoiceItems.map((item) => ({
+          invoice: invoice.id, // Add the invoice ID to each item
           item_type: item.item_type || data.invoiceType,
           product: data.invoiceType === "product" ? (products.find(p => p.name === item.itemName)?.id || null) : null,
           name: data.invoiceType === "service" ? item.itemName : null,
           quantity: item.quantity,
           unit_cost: item.unitCost.toString(),
+          id: item.id || undefined, // Include ID if it exists for existing items
         })),
       };
 
       console.log("Updated Invoice Data:", JSON.stringify(invoiceData, null, 2));
-
       const invoiceResponse = await apiClient.put(`invoices/invoices/${invoice.id}/`, invoiceData);
       console.log("Invoice Updated:", invoiceResponse.data);
 
@@ -210,15 +211,12 @@ const EditInvoice = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 p-8">
-      <div className="bg-white p-8 rounded-lg shadow-xl w-full">
+      <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-4xl">
         <h2 className="text-2xl font-extrabold mb-6 text-gray-800 text-center">
           Edit Invoice: {invoice?.invoice_number}
         </h2>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="grid grid-cols-1 md:grid-cols-2 gap-8"
-        >
+        <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-4">
             <FormField
               label="Invoice Number"
@@ -238,11 +236,11 @@ const EditInvoice = () => {
                 { value: "product", label: "Product" },
                 { value: "service", label: "Service" },
               ]}
+              value={invoiceType}
               onChange={(e) => {
                 setInvoiceType(e.target.value);
                 setValue("invoiceType", e.target.value);
               }}
-              placeholder="Select invoice type"
               required
             />
             <FormField
@@ -254,6 +252,7 @@ const EditInvoice = () => {
                 { value: "yes", label: "Yes" },
                 { value: "no", label: "No" },
               ]}
+              value={taxable}
               onChange={(e) => {
                 setTaxable(e.target.value);
                 setValue("taxable", e.target.value);
@@ -273,11 +272,11 @@ const EditInvoice = () => {
                     label: `${tax.percentage}%`,
                   })),
                 ]}
+                value={selectedTaxRate}
                 onChange={(e) => {
                   setSelectedTaxRate(e.target.value);
                   setValue("taxRate", e.target.value);
                 }}
-                placeholder="Select tax rate"
               />
             )}
             <FormField
@@ -292,7 +291,8 @@ const EditInvoice = () => {
                 })),
               ]}
               register={register}
-              placeholder="Select branch"
+              value={watch("branchAddress")}
+              onChange={(e) => setValue("branchAddress", e.target.value)}
               required
             />
             <FormField
@@ -303,29 +303,32 @@ const EditInvoice = () => {
                 { value: "", label: "Select client" },
                 ...clients.map((c) => ({
                   value: c.id.toString(),
-                  label: `${c.client_name}, ${c.country}, ${c.state}, ${c.city}, ${c.address}, ${c.phone}, ${c.tax_type}, ${c.gst}, ${c.vat}, ${c.website}, ${c.invoice_series}, ${c.status}`,
+                  label: c.client_name,
                 })),
               ]}
               register={register}
-              placeholder="Select client"
+              value={watch("clientName")}
+              onChange={(e) => setValue("clientName", e.target.value)}
               required
             />
             <div className="flex items-center justify-between gap-4">
               <FormField
                 label="Invoice Date*"
-                placeholder="Select invoice date"
-                type="date"
                 name="invoiceDate"
+                type="date"
                 register={register}
+                value={watch("invoiceDate")}
+                onChange={(date) => setValue("invoiceDate", date)}
                 error={errors.invoiceDate}
                 required
               />
               <FormField
                 label="Due Date*"
-                placeholder="Select due date"
-                type="date"
                 name="dueDate"
+                type="date"
                 register={register}
+                value={watch("dueDate")}
+                onChange={(date) => setValue("dueDate", date)}
                 error={errors.dueDate}
                 required
               />
@@ -342,7 +345,8 @@ const EditInvoice = () => {
                 })),
               ]}
               register={register}
-              placeholder="Select bank account"
+              value={watch("bankAccount")}
+              onChange={(e) => setValue("bankAccount", e.target.value)}
               required
             />
             <FormField
@@ -354,7 +358,8 @@ const EditInvoice = () => {
                 ...["USD", "EUR", "GBP", "INR"].map((c) => ({ value: c, label: c })),
               ]}
               register={register}
-              placeholder="Select currency"
+              value={watch("currencyType")}
+              onChange={(e) => setValue("currencyType", e.target.value)}
             />
           </div>
 
@@ -368,9 +373,9 @@ const EditInvoice = () => {
                 ...["Credit", "Debit", "UPI", "Net Banking"].map((t) => ({ value: t, label: t })),
               ]}
               register={register}
-              placeholder="Select payment terms"
+              value={watch("paymentTerms")}
+              onChange={(e) => setValue("paymentTerms", e.target.value)}
             />
-
             {invoiceType && (
               <div>
                 <h3 className="font-bold text-sm mb-2 text-gray-700">Invoice Items</h3>
@@ -383,12 +388,8 @@ const EditInvoice = () => {
                     <div className="col-span-2">Total</div>
                     <div className="col-span-1"></div>
                   </div>
-
                   {invoiceItems.map((item, index) => (
-                    <div
-                      key={index}
-                      className="grid grid-cols-12 gap-2 mb-4 items-center"
-                    >
+                    <div key={index} className="grid grid-cols-12 gap-2 mb-4 items-center">
                       <FormField
                         name={`itemName-${index}`}
                         type="select"
@@ -400,54 +401,38 @@ const EditInvoice = () => {
                             label: `${prod.name} (${invoiceType === "product" ? prod.unit_cost || prod.price : prod.rate} ${selectedCurrency})`,
                           })),
                         ]}
-                        onChange={(e) => updateItem(index, "itemName", e.target.value)}
                         value={item.itemName}
+                        onChange={(e) => updateItem(index, "itemName", e.target.value)}
                         className="col-span-3"
                       />
-
                       <input
                         className="w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 col-span-2"
                         type="number"
                         min="1"
                         value={item.quantity}
-                        placeholder="Enter quantity"
-                        onChange={(e) =>
-                          updateItem(index, "quantity", parseInt(e.target.value) || 1)
-                        }
+                        onChange={(e) => updateItem(index, "quantity", parseInt(e.target.value) || 1)}
                       />
-
                       <input
-                        className={`w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 col-span-2 ${
-                          invoiceType === "product" && item.itemName ? "bg-gray-200 cursor-not-allowed" : ""
-                        }`}
+                        className={`w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 col-span-2 ${invoiceType === "product" && item.itemName ? "bg-gray-200 cursor-not-allowed" : ""}`}
                         type="number"
                         min="0"
                         step="0.01"
                         value={item.unitCost}
-                        placeholder="Enter unit cost"
-                        onChange={(e) =>
-                          invoiceType === "service" &&
-                          updateItem(index, "unitCost", parseFloat(e.target.value) || 0)
-                        }
+                        onChange={(e) => invoiceType === "service" && updateItem(index, "unitCost", parseFloat(e.target.value) || 0)}
                         readOnly={invoiceType === "product" && item.itemName !== ""}
                       />
-
                       <input
                         className="w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 col-span-2"
                         type="text"
                         value={item.itemGst}
-                        placeholder="GST"
                         readOnly
                       />
-
                       <input
                         className="w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 col-span-2"
                         type="number"
                         value={item.total}
-                        placeholder="Total"
                         readOnly
                       />
-
                       <button
                         type="button"
                         className="text-red-500 col-span-1 hover:text-red-700"
@@ -457,7 +442,6 @@ const EditInvoice = () => {
                       </button>
                     </div>
                   ))}
-
                   <button
                     type="button"
                     className="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 transition-colors"
@@ -468,75 +452,57 @@ const EditInvoice = () => {
                 </div>
               </div>
             )}
-
             <div className="mt-6 space-y-3">
               <div className="flex justify-between">
                 <span className="text-sm font-semibold text-gray-700">Subtotal:</span>
-                <span className="text-sm text-gray-800">
-                  {watch("subtotal") || "0.00"} {selectedCurrency}
-                </span>
+                <span className="text-sm text-gray-800">{watch("subtotal") || "0.00"} {selectedCurrency}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-sm font-semibold text-gray-700">Total GST:</span>
-                <span className="text-sm text-gray-800">
-                  {watch("totalTax") || "0.00"} {selectedCurrency}
-                </span>
+                <span className="text-sm text-gray-800">{watch("totalTax") || "0.00"} {selectedCurrency}</span>
               </div>
               <FormField
                 label="Shipping"
                 name="shipping"
                 type="number"
                 register={register}
-                placeholder="Enter shipping cost"
+                value={watch("shipping")}
+                onChange={(e) => setValue("shipping", e.target.value)}
                 min="0"
                 step="0.01"
-                onChange={(e) => {
-                  setValue("shipping", e.target.value);
-                  calculateTotals();
-                }}
               />
               <FormField
                 label="Discount"
                 name="discount"
                 type="number"
                 register={register}
-                placeholder="Enter discount"
+                value={watch("discount")}
+                onChange={(e) => setValue("discount", e.target.value)}
                 min="0"
                 step="0.01"
-                onChange={(e) => {
-                  setValue("discount", e.target.value);
-                  calculateTotals();
-                }}
               />
               <FormField
                 label="Amount Paid"
                 name="amountPaid"
                 type="number"
                 register={register}
-                placeholder="Enter amount paid"
+                value={watch("amountPaid")}
+                onChange={(e) => setValue("amountPaid", e.target.value)}
                 min="0"
                 step="0.01"
-                onChange={(e) => {
-                  setValue("amountPaid", e.target.value);
-                  calculateTotals();
-                }}
               />
               <div className="flex justify-between border-t pt-2">
                 <span className="text-sm font-bold text-gray-700">Total Due:</span>
                 <span className="text-sm font-bold text-gray-800">
-                  {watch("totalDue") || "0.00"} {selectedCurrency} (Rounded:{" "}
-                  {roundedTotalDue} {selectedCurrency} {roundingDisplay})
+                  {watch("totalDue") || "0.00"} {selectedCurrency} (Rounded: {roundedTotalDue} {selectedCurrency} {roundingDisplay})
                 </span>
               </div>
             </div>
           </div>
-
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`bg-black text-white px-6 py-3 rounded w-full col-span-2 hover:bg-gray-900 transition-colors ${
-              isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+            className={`bg-black text-white px-6 py-3 rounded w-full col-span-2 hover:bg-gray-900 transition-colors ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             {isSubmitting ? "Updating..." : "Update Invoice"}
           </button>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,7 +20,7 @@ const FormField = ({
 }) => {
   const [dateValue, setDateValue] = useState(value || null);
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedOption, setSelectedOption] = useState(value || "");
+  const [selectedOption, setSelectedOption] = useState("");
 
   const dropdownVariants = {
     hidden: { opacity: 0, y: -10 },
@@ -41,10 +41,18 @@ const FormField = ({
     }
   };
 
+  useEffect(() => {
+    if (type === "select" && options && value) {
+      const matchingOption = options.find((option) => option.value === value);
+      setSelectedOption(matchingOption ? matchingOption.label : placeholder || "Select an option");
+    }
+  }, [value, options, type, placeholder]);
+
   const handleSelect = (option) => {
     setSelectedOption(option.label);
-    register(name).onChange({ target: { name, value: option.value } });
-    if (onChange) onChange({ target: { value: option.value } });
+    const event = { target: { name, value: option.value } };
+    register(name).onChange(event); 
+    if (onChange) onChange(event);  
     setIsOpen(false);
   };
 
