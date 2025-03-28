@@ -54,7 +54,7 @@ const EditInvoice = () => {
   const [invoiceItems, setInvoiceItems] = useState(
     invoice?.items?.map((item) => ({
       id: item.id, // Preserve item ID for updates
-      itemName: item.name || (products.find(p => p.id === item.product)?.name || ""),
+      itemName: item.name || (products.find((p) => p.id === item.product)?.name || ""),
       quantity: item.quantity,
       unitCost: parseFloat(item.unit_cost),
       itemGst: item.total_gst ? item.total_gst.toString() : "0",
@@ -73,7 +73,14 @@ const EditInvoice = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [clientsResponse, branchesResponse, bankAccountsResponse, taxesResponse, productsResponse, servicesResponse] = await Promise.all([
+        const [
+          clientsResponse,
+          branchesResponse,
+          bankAccountsResponse,
+          taxesResponse,
+          productsResponse,
+          servicesResponse,
+        ] = await Promise.all([
           apiClient.get("clients/clients/"),
           apiClient.get("branch/branch_addresses/"),
           apiClient.get("bank/bank-accounts/"),
@@ -141,7 +148,7 @@ const EditInvoice = () => {
 
   const calculateTotals = () => {
     const subtotal = invoiceItems.reduce(
-      (sum, item) => sum + (item.quantity * item.unitCost),
+      (sum, item) => sum + item.quantity * item.unitCost,
       0
     );
     const totalTax = invoiceItems.reduce(
@@ -180,20 +187,33 @@ const EditInvoice = () => {
         discount: parseFloat(data.discount).toString() || "0.00",
         shipping: parseFloat(data.shipping).toString() || "0.00",
         amount_paid: parseFloat(data.amountPaid).toString() || "0.00",
-        items: invoiceItems.map((item) => ({
-          invoice: invoice.id, // Add the invoice ID to each item
-          item_type: item.item_type || data.invoiceType,
-          product: data.invoiceType === "product" ? (products.find(p => p.name === item.itemName)?.id || null) : null,
-          name: data.invoiceType === "service" ? item.itemName : null,
-          quantity: item.quantity,
-          unit_cost: item.unitCost.toString(),
-          id: item.id || undefined, // Include ID if it exists for existing items
-        })),
       };
 
       console.log("Updated Invoice Data:", JSON.stringify(invoiceData, null, 2));
       const invoiceResponse = await apiClient.put(`invoices/invoices/${invoice.id}/`, invoiceData);
       console.log("Invoice Updated:", invoiceResponse.data);
+
+      for (const item of invoiceItems) {
+        const itemData = {
+          invoice: invoice.id, 
+          item_type: item.item_type || data.invoiceType,
+          product:
+            data.invoiceType === "product"
+              ? products.find((p) => p.name === item.itemName)?.id || null
+              : null,
+          name: data.invoiceType === "service" ? item.itemName : null,
+          quantity: item.quantity,
+          unit_cost: item.unitCost.toString(),
+        };
+
+        if (item.id) {
+          await apiClient.put(`invoices/invoice-items/${item.id}/`, itemData);
+          console.log(`Updated item ${item.id}`);
+        } else {
+          const itemResponse = await apiClient.post("invoices/invoice-items/", itemData);
+          console.log(`Created new item ${itemResponse.data.id}`);
+        }
+      }
 
       alert("Invoice updated successfully!");
       navigate("/invoice/proforma");
@@ -210,7 +230,7 @@ const EditInvoice = () => {
   const roundingDisplay = roundingDifference >= 0 ? `+${roundingDifference}` : roundingDifference;
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-8">
+    <div className="flex items-center justify-center min-h-screen p-8">
       <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-6xl">
         <h2 className="text-2xl font-extrabold mb-6 text-gray-800 text-center">
           Edit Invoice: {invoice?.invoice_number}
@@ -220,7 +240,7 @@ const EditInvoice = () => {
           <div className="space-y-4">
             <FormField
               label="Invoice Number"
-              name="invoiceNumber"
+              name="invoice_number"
               register={register}
               error={errors.invoiceNumber}
               placeholder="Enter invoice number"
@@ -228,7 +248,7 @@ const EditInvoice = () => {
             />
             <FormField
               label="Invoice Type*"
-              name="invoiceType"
+              name="invoice_type"
               register={register}
               type="select"
               options={[
@@ -413,12 +433,16 @@ const EditInvoice = () => {
                         onChange={(e) => updateItem(index, "quantity", parseInt(e.target.value) || 1)}
                       />
                       <input
-                        className={`w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 col-span-2 ${invoiceType === "product" && item.itemName ? "bg-gray-200 cursor-not-allowed" : ""}`}
+                        className={`w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 col-span-2 ${
+                          invoiceType === "product" && item.itemName ? "bg-gray-200 cursor-not-allowed" : ""
+                        }`}
                         type="number"
                         min="0"
                         step="0.01"
                         value={item.unitCost}
-                        onChange={(e) => invoiceType === "service" && updateItem(index, "unitCost", parseFloat(e.target.value) || 0)}
+                        onChange={(e) =>
+                          invoiceType === "service" && updateItem(index, "unitCost", parseFloat(e.target.value) || 0)
+                        }
                         readOnly={invoiceType === "product" && item.itemName !== ""}
                       />
                       <input
@@ -502,33 +526,14 @@ const EditInvoice = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`bg-black text-white px-6 py-3 rounded w-full col-span-2 hover:bg-gray-900 transition-colors ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
+            className={`bg-black text-white hover:bg-white hover:text-black border text-sm font-bold px-3 py-3 rounded w-full col-span-2 transition-colors duration-300 ${
+              isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
             {isSubmitting ? "Updating..." : "Update Invoice"}
           </button>
         </form>
         <div className="mt-4 flex justify-start space-x-4">
-          <button
-            type="button"
-            onClick={() => navigate("/address/add")}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
-          >
-            Go to Add Branch
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/clients/add")}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
-          >
-            Go to Add Client
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/bank-account/add")}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
-          >
-            Go to Add Bank Account
-          </button>
         </div>
       </div>
     </div>

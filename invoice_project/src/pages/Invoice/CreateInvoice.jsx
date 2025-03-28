@@ -186,7 +186,7 @@ const CreateInvoice = () => {
   const roundingDisplay = roundingDifference >= 0 ? `+${roundingDifference}` : roundingDifference;
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 p-8">
+    <div className="flex items-center justify-center min-h-screen p-8">
       <div className="bg-white p-8 rounded-lg shadow-xl w-full">
         <h2 className="text-2xl font-extrabold mb-6 text-gray-800 text-center">
           Create New Invoice
@@ -385,9 +385,8 @@ const CreateInvoice = () => {
                       />
 
                       <input
-                        className={`w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 col-span-2 ${
-                          invoiceType === "product" && item.itemName ? "bg-gray-200 cursor-not-allowed" : ""
-                        }`}
+                        className={`w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 col-span-2 ${invoiceType === "product" && item.itemName ? "bg-gray-200 cursor-not-allowed" : ""
+                          }`}
                         type="number"
                         min="0"
                         step="0.01"
@@ -428,7 +427,7 @@ const CreateInvoice = () => {
 
                   <button
                     type="button"
-                    className="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800 transition-colors"
+                    className="bg-gray-700 text-white px-3 py-3 rounded hover:bg-gray-800 transition-colors"
                     onClick={addItem}
                   >
                     Add Item
@@ -498,36 +497,34 @@ const CreateInvoice = () => {
               </div>
             </div>
           </div>
-
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`bg-black text-white px-6 py-3 rounded w-full col-span-2 hover:bg-gray-900 transition-colors ${
-              isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+            className={`bg-black text-white hover:bg-white hover:text-black border text-sm font-bold px-3 py-3 rounded w-full col-span-2 transition-colors duration-300 ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+              }`}
           >
             {isSubmitting ? "Creating..." : "Create Invoice"}
           </button>
         </form>
-        <div className="mt-4 flex justify-start space-x-4">
+        <div className="mt-4 w-full flex justify-start space-x-4">
           <button
             type="button"
             onClick={() => navigate("/address/add")}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+            className="w-full bg-indigo-600 hover:bg-white text-white hover:text-black border text-sm font-bold px-3 py-3 rounded transition-colors duration-300"
           >
             Go to Add Branch
           </button>
           <button
             type="button"
             onClick={() => navigate("/clients/add")}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+            className="w-full bg-indigo-600 hover:bg-white text-white hover:text-black border text-sm font-bold px-3 py-3 rounded transition-colors duration-300"
           >
             Go to Add Client
           </button>
           <button
             type="button"
             onClick={() => navigate("/bank-account/add")}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+            className="w-full bg-indigo-600 hover:bg-white text-white hover:text-black border text-sm font-bold px-3 py-3 rounded transition-colors duration-300"
           >
             Go to Add Bank Account
           </button>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { UserCog, Search } from "./../Icons"; 
+import { UserCog, Search } from "./../Icons";
 import profilePicture from "../../assets/images/profile-icon.jpg";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useDebounce } from "use-debounce";
@@ -13,7 +13,6 @@ const Topbar = ({ onLogout }) => {
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-
   const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
 
   useEffect(() => {
@@ -23,10 +22,8 @@ const Topbar = ({ onLogout }) => {
         setIsSearchDropdownOpen(false);
         return;
       }
-
       setIsLoading(true);
       setIsSearchDropdownOpen(true);
-
       try {
         const [
           invoicesResponse,
@@ -45,13 +42,12 @@ const Topbar = ({ onLogout }) => {
           apiClient.get("branch/branch_addresses/"),
           apiClient.get("invoices/taxes/"),
         ]);
-
         const results = [
           ...invoicesResponse.data.map((item) => ({
             type: "Invoice",
             id: item.id,
             name: item.invoice_number || `Invoice ${item.id}`,
-            path: `/invoice/view/${item.id}`,
+            path: `/invoice/proforma`, 
           })),
           ...productsResponse.data.map((item) => ({
             type: "Product",
@@ -112,6 +108,31 @@ const Topbar = ({ onLogout }) => {
     navigate(path);
   };
 
+  const getActiveLocationName = () => {
+    const path = location.pathname;
+    if (path === "/") return { name: "Dashboard", nested: null };
+    if (path === "/invoice/create") return { name: "Invoices", nested: "Create Invoice" };
+    if (path === "/invoice/proforma") return { name: "Invoices", nested: "Proforma Invoice" };
+    if (path === "/invoice/edit") return { name: "Invoices", nested: "Edit Invoice" };
+    if (path === "/invoice/invoice-note") return { name: "Invoices", nested: "Invoice Note" };
+    if (path === "/tax/add") return { name: "Tax", nested: "Add Tax" };
+    if (path === "/tax/view") return { name: "Tax", nested: "View Tax" };
+    if (path === "/products/add") return { name: "Products & Services", nested: "Add Products" };
+    if (path === "/products/view") return { name: "Products & Services", nested: "View Products" };
+    if (path === "/services/add") return { name: "Products & Services", nested: "Add Service" };
+    if (path === "/services/view") return { name: "Products & Services", nested: "View Service" };
+    if (path === "/clients/add") return { name: "Clients", nested: "Add Clients" };
+    if (path === "/clients/view") return { name: "Clients", nested: "View Clients" };
+    if (path === "/address/add") return { name: "Address", nested: "Add Address" };
+    if (path === "/address/view") return { name: "Address", nested: "View Address" };
+    if (path === "/bank-account/add") return { name: "Bank Account", nested: "Add Bank Account" };
+    if (path === "/bank-account/view") return { name: "Bank Account", nested: "View Bank Account" };
+    if (path === "/profile") return { name: "Profile", nested: null };
+    return { name: "Location?", nested: null };
+  };
+
+  const activeLocation = getActiveLocationName();
+
   const handleLogout = async () => {
     const refreshToken = localStorage.getItem("refreshToken");
 
@@ -139,46 +160,25 @@ const Topbar = ({ onLogout }) => {
     }
   };
 
-  const getActiveLocationName = () => {
-    const path = location.pathname;
-    if (path === "/") return { name: "Dashboard", nested: null };
-    if (path.startsWith("/invoice")) return { name: "Invoice", nested: "Create Invoice" };
-    if (path.startsWith("/tax")) return { name: "Tax", nested: null };
-    if (path.startsWith("/products") || path.startsWith("/services"))
-      return { name: "Products & Services", nested: null };
-    if (path.startsWith("/clients")) return { name: "Clients", nested: null };
-    if (path.startsWith("/address")) return { name: "Address", nested: null };
-    if (path.startsWith("/bank-account")) return { name: "Bank Account", nested: null };
-    if (path.startsWith("/profile")) return { name: "Profile", nested: null };
-    return { name: "Unknown", nested: null };
-  };
-
-  const activeLocation = getActiveLocationName();
-
   return (
     <div className="bg-gray-100 shadow flex items-center justify-between px-4 h-20 fixed top-0 left-0 right-0 z-40">
-      <div className="container mx-10 flex justify-between items-center">
-        <div className="relative left-64 flex items-center space-x-2">
-          <div className="ml-6 flex items-center space-x-1 text-xs text-gray-600 font-extrabold">
+      <div className="container mx-auto flex items-center justify-between px-4">
+        <div className="relative left-72 flex items-center space-x-4">
+          <div className="text-xs font-extrabold text-gray-600">
             <span>{activeLocation.name}</span>
             {activeLocation.nested && (
-              <>
-                <span className="font-extrabold">:</span>
-                <span className="font-medium">{activeLocation.nested}</span>
-              </>
+              <span className="ml-1 font-medium">: {activeLocation.nested}</span>
             )}
           </div>
-          <div className="flex items-center relative" aria-label="Search Bar">
-            <div className="relative left-8 text-md text-indigo-500">
-              <Search />
-            </div>
+          <div className="relative hidden md:flex items-center w-64">
+            <Search className="absolute left-3 text-gray-500" />
             <input
               type="search"
               placeholder="Type to search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onFocus={() => debouncedSearchTerm && setIsSearchDropdownOpen(true)}
-              className="py-2 pl-10 pr-2 rounded-md focus:outline-none w-full text-xs bg-transparent"
+              className="py-2 pl-2 pr-2 rounded-md focus:outline-none w-full text-xs bg-transparent"
               disabled={isLoading}
               aria-label="Search Input"
             />
@@ -211,38 +211,20 @@ const Topbar = ({ onLogout }) => {
             )}
           </div>
         </div>
-
-        <div className="flex items-center space-x-4 relative">
-          <div className="grid text-right">
-            <span className="text-sm font-normal">Invoice Dashboard</span>
-            <span className="text-xs font-light text-indigo-500">Admin</span>
+        <div className="flex items-center space-x-4">
+          <div className="hidden md:block text-right">
+            <span className="text-xs font-extrabold text-gray-600">Invoice Dashboard</span>
+            <span className="text-xs font-light text-indigo-500 block">Admin</span>
           </div>
-          <img
-            src={profilePicture}
-            alt="Profile"
-            className="w-12 h-12 rounded-full ml-4"
-          />
-          <div
-            className="text-indigo-500 hover:text-indigo-500 cursor-pointer relative"
-            onMouseEnter={() => setIsDropdownOpen(true)}
-            onMouseLeave={() => setIsDropdownOpen(false)}
-            aria-label="Dropdown Icon"
-          >
-            <UserCog />
+          <img src={profilePicture} alt="Profile" className="w-10 h-10 rounded-full" />
+          <div className="relative">
+            <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="text-indigo-500 hover:text-indigo-500">
+              <UserCog />
+            </button>
             {isDropdownOpen && (
-              <div className="absolute right-0 top-4 bg-white shadow-lg rounded-sm overflow-hidden z-50 w-[150px] h-[70px]">
-                <Link
-                  to="/profile"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-200 w-full text-left"
-                >
-                  Profile
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-200 w-full text-left"
-                >
-                  Logout
-                </button>
+              <div className="absolute right-0 bg-white shadow-lg rounded-md w-36">
+                <Link to="/profile" className="block  px-4 py-2 text-sm hover:bg-gray-200">Profile</Link>
+                <button onClick={handleLogout} className="px-4 py-2 text-sm hover:bg-gray-200 w-full text-left">Logout</button>
               </div>
             )}
           </div>

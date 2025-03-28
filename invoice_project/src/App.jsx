@@ -66,7 +66,6 @@ function App() {
           <Route path="/invoice/create" element={<CreateInvoice />} />
           <Route path="/invoice/edit" element={<EditInvoice />} />
           <Route path="/invoice/proforma" element={<ProformaInvoice />} />
-          <Route path="/invoice/final" element={<FinalInvoice />} />
           <Route path="/invoice/invoice-note" element={<InvoiceNote />} />
           <Route path="/tax/add" element={<AddTax />} />
           <Route path="/tax/view" element={<ViewTax />} />
@@ -82,6 +81,7 @@ function App() {
           <Route path="/bank-account/view" element={<ViewBankAccount />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
+        <Route path="/invoice/final" element={<FinalInvoice />} />
       </>
     )
   );

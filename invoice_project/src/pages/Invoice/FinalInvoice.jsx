@@ -1,94 +1,247 @@
-import React from 'react';
+import React, { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
+import apiClient from "../../api/apiClient";
 import logo from "../../assets/images/logo.png";
+import stamp from "../../assets/images/stamp.png";
+
+const numberToWords = (num) => {
+  const ones = [
+    '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'
+  ];
+  const teens = [
+    'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
+  ];
+  const tens = [
+    '', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'
+  ];
+
+  if (num === 0) return 'Zero';
+
+  const convertMillions = (num) => {
+    if (num < 100) return convertBelowHundred(num);
+    else if (num < 1000) return convertBelowThousand(num);
+    else if (num < 1000000) return convertBelowMillion(num);
+    else {
+      const millions = Math.floor(num / 1000000);
+      const remainder = num % 1000000;
+      return `${convertBelowHundred(millions)} Million ${convertMillions(remainder)}`.trim();
+    }
+  };
+
+  const convertBelowMillion = (num) => {
+    if (num < 1000) return convertBelowThousand(num);
+    else {
+      const thousands = Math.floor(num / 1000);
+      const remainder = num % 1000;
+      return `${convertBelowHundred(thousands)} Thousand ${convertBelowThousand(remainder)}`.trim();
+    }
+  };
+
+  const convertBelowThousand = (num) => {
+    if (num < 100) return convertBelowHundred(num);
+    else {
+      const hundreds = Math.floor(num / 100);
+      const remainder = num % 100;
+      return `${ones[hundreds]} Hundred ${convertBelowHundred(remainder)}`.trim();
+    }
+  };
+
+  const convertBelowHundred = (num) => {
+    if (num < 10) return ones[num];
+    else if (num < 20) return teens[num - 10];
+    else {
+      const tensPlace = Math.floor(num / 10);
+      const onesPlace = num % 10;
+      return `${tens[tensPlace]} ${ones[onesPlace]}`.trim();
+    }
+  };
+
+  return convertMillions(num);
+};
 
 const FinalInvoice = () => {
+  const location = useLocation();
+  const proformaInvoice = location.state?.invoice;
+
+  const [clients, setClients] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [bankAccounts, setBankAccounts] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [clientsResponse, branchesResponse, bankAccountsResponse] = await Promise.all([
+          apiClient.get("clients/clients/"),
+          apiClient.get("branch/branch_addresses/"),
+          apiClient.get("bank/bank-accounts/"),
+        ]);
+        setClients(clientsResponse.data);
+        setBranches(branchesResponse.data);
+        setBankAccounts(bankAccountsResponse.data);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (!proformaInvoice) {
+    return <div>No invoice data available.</div>;
+  }
+
+  const {
+    invoice_number,
+    invoice_date,
+    due_date,
+    client,
+    branch_address,
+    bank_account,
+    items,
+    total_due,
+    currency_type,
+    payment_terms,
+    gst_rate,
+    subtotal,
+    totalTax,
+    shipping,
+    discount,
+    amount_paid,
+  } = proformaInvoice;
+
+  const clientDetails = clients.find(c => c.id === client);
+  const branchDetails = branches.find(b => b.id === branch_address);
+  const bankDetails = bankAccounts.find(ba => ba.id === bank_account);
+
+  const totalInWords = numberToWords(total_due);
+
   return (
-    <>
-      <div className='mt-8'></div>
-      <div className="w-[600px] h-[800px] mx-auto bg-white pl-10" style={{ fontFamily: "Poppins, serif" }}>
-        <div className="flex items-center justify-between">
-          <img src={logo} alt="Invoice Logo" className="w-24 h-24 object-contain" />
-          <h1 className="text-xl font-extrabold uppercase text-gray-800 pr-12">Invoice</h1>
+    <div className="w-[21cm] h-[29.7cm] mx-auto p-5 box-border font-sans">
+      <div className="flex justify-between mb-5">
+        <div className="w-1/4">
+          <img src={logo} alt="Logo" className="w-24 h-24" />
         </div>
-
-        <div className="flex flex-row items-center justify-center relative bottom-4">
-          <div className="mb-4 md:mb-0 relative left-24">
-            <p className="text-[8px] text-gray-600">Invoice to:</p>
-            <div>
-              <span className="block text-xs font-semibold w-[80%]">Crossroads Career Consultations Pvt. Ltd</span>
-              <h6 className="text-[8px] font-extrabold mt-2">Address</h6>
-              <p className='text-[8px]'>Edappally, Kochi - 682042</p>
-              <p className='text-[8px]'>Kerala</p>
-            </div>
-            <div className="mt-2">
-              <span className="block text-[8px]"><span className='font-bold'>GSTIN: </span><span>3242232343434IZU</span></span>
-              <p className='text-[8px]'><span className='font-bold'>P: </span><span>+91 9633175758</span></p>
-              <p className='text-[8px]'><span className='font-bold'>W: </span><span>crossroads.com</span></p>
-            </div>
+        <div className="w-3/4 flex justify-between">
+          <div className="w-1/2">
+            <h4 className="font-bold">Invoice to:</h4>
+            <p>{clientDetails?.client_name}</p>
+            <p>{clientDetails?.address}</p>
+            <p><b>GSTIN:</b> {clientDetails?.gst}</p>
+            <p><b>P:</b> {clientDetails?.phone}</p>
+            <p><b>W:</b> {clientDetails?.website}</p>
           </div>
-
-          <div className='relative left-6'>
-            <p className="text-[8px] text-gray-600">Invoice from:</p>
-            <div>
-              <span className="block text-xs font-semibold w-[80%]">Crossroads Career Consultations Pvt. Ltd</span>
-              <h6 className="text-[8px] font-extrabold mt-2">Address</h6>
-              <p className='text-[8px]'>Edappally, Kochi - 682042</p>
-              <p className='text-[8px]'>Kerala</p>
-            </div>
-            <div className="mt-2">
-              <span className="block text-[8px]"><span className='font-bold'>GSTIN: </span><span>3242232343434IZU</span></span>
-              <p className='text-[8px]'><span className='font-bold'>P: </span><span>+91 9633175758</span></p>
-              <p className='text-[8px]'><span className='font-bold'>W: </span><span>crossroads.com</span></p>
-            </div>
+          <div className="w-1/2">
+            <h4 className="font-bold">Invoice from:</h4>
+            <p>{branchDetails?.branch_name}</p>
+            <p>{branchDetails?.branch_address}</p>
+            <p><b>GSTIN:</b> {branchDetails?.gstin}</p>
+            <p><b>P:</b> {branchDetails?.phone}</p>
+            <p><b>W:</b> {branchDetails?.website}</p>
           </div>
-        </div>
-
-        <div>
-          <div class="mx-auto">
-            <table class="min-w-full h-[400px] border-collapse border border-zinc-300">
-              <thead>
-                <tr className='bg-black'>
-                  <th class="p-2 text-white text-xs font-semibold uppercase">Item Description</th>
-                  <th class="p-2 text-white text-xs font-semibold uppercase">Quantity</th>
-                  <th class="p-2 text-white text-xs font-semibold uppercase">Price</th>
-                  <th class="p-2 text-white text-xs font-semibold uppercase">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td class="text-[8px] font-extrabold border-l border-0 border-zinc-300 p-2">Social Media Management and Advertising Campaign Oversight</td>
-                  <td class="text-[8px] font-extrabold border-l border-0 border-zinc-300 p-2">01</td>
-                  <td class="text-[8px] font-extrabold border-l border-0 border-zinc-300 p-2">XXXX</td>
-                  <td class="text-[8px] font-extrabold border-l border-0 border-zinc-300 p-2">XXXX</td>
-                </tr>
-                <tr>
-                  <td class="text-[8px] font-extrabold border-l border-0 border-zinc-300 p-2">GST</td>
-                  <td class="text-[8px] font-extrabold border-l border-0 border-zinc-300 p-2">18%</td>
-                  <td class="text-[8px] font-extrabold border-l border-0 border-zinc-300 p-2">XXXX</td>
-                  <td class="text-[8px] font-extrabold border-l border-0 border-zinc-300 p-2">XXXX</td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div class="bg-black px-8 py-4">
-              <p class="text-white text-[8px] font-extrabold flex items-center justify-between"><span>Grand Total:</span><span>XXXX.00 INR</span></p>
-              <p class="text-white text-[8px] font-extrabold flex items-center justify-between"><span>Total In Words:</span><span>XXXXXXXXXXXXXXXXXXXXXXXX</span></p>
-            </div>
-          </div>
-        </div>
-        <div class="p-4">
-          <p class="font-semibold text-[8px]">Note:</p>
-          <p class="text-[8px] mt-2 text-zinc-700">
-            Please make the payment of <strong>XXXXXX.XX</strong> to the bank account details provided above. Upon receiving the payment, we will proceed with the services/products as agreed and provide a
-            receipt for the payment received.
-          </p>
-          <p class="text-[8px] mt-2 text-zinc-700">
-            Thank you for choosing <strong>Noteworthy WebWorks Ltd.</strong> If you have any questions or require further assistance, please don't hesitate to contact us at
-            <a href="tel:+917978272727" class="text-blue-500 underline">+91 7978 272727</a> or <a href="mailto:account@noteworthy.com" class="text-blue-500 underline">account@noteworthy.com</a>.
-          </p>
         </div>
       </div>
-    </>
+
+      <div className="text-center mb-5">
+        <h1 className="text-2xl font-bold">INVOICE</h1>
+      </div>
+
+      <div className="flex justify-between mb-5">
+        <div className="w-2/3">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="bg-black text-white font-bold">
+                <th className="p-2">ITEM DESCRIPTION</th>
+                <th className="p-2">QUANTITY</th>
+                <th className="p-2">GST</th>
+                <th className="p-2">PRICE</th>
+                <th className="p-2">AMOUNT</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items?.map((item, index) => (
+                <tr key={index} className="border-b border-gray-300">
+                  <td className="p-2 bg-gray-100">{item.name}</td>
+                  <td className="p-2 bg-gray-100">{item.quantity}</td>
+                  <td className="p-2 bg-gray-100">{item.total_gst}</td>
+                  <td className="p-2 bg-gray-100">{item.unit_cost}</td>
+                  <td className="p-2 bg-gray-100">{item.total}</td>
+                </tr>
+              ))}
+              <tr className="border-b border-gray-300">
+                <td colSpan="2" className="text-right font-bold p-2 bg-gray-200">Subtotal</td>
+                <td colSpan="3" className="text-right font-bold p-2 bg-gray-200">{subtotal} {currency_type}</td>
+              </tr>
+              <tr className="border-b border-gray-300">
+                <td colSpan="2" className="text-right font-bold p-2 bg-gray-200">Shipping</td>
+                <td colSpan="3" className="text-right font-bold p-2 bg-gray-200">{shipping} {currency_type}</td>
+              </tr>
+              <tr className="border-b border-gray-300">
+                <td colSpan="2" className="text-right font-bold p-2 bg-gray-200">Discount</td>
+                <td colSpan="3" className="text-right font-bold p-2 bg-gray-200">-{discount} {currency_type}</td>
+              </tr>
+              <tr className="border-b border-gray-300">
+                <td colSpan="2" className="text-right font-bold p-2 bg-gray-200">Amount Paid</td>
+                <td colSpan="3" className="text-right font-bold p-2 bg-gray-200">-{amount_paid} {currency_type}</td>
+              </tr>
+              <tr className="bg-black text-white font-bold">
+                <td colSpan="2" className="text-right p-2">Grand Total</td>
+                <td colSpan="3" className="text-right p-2">{total_due} {currency_type}</td>
+              </tr>
+              <tr className="bg-black text-white font-bold">
+                <td colSpan="2" className="text-right p-2">Total in Words</td>
+                <td colSpan="3" className="text-right p-2">{totalInWords} {currency_type}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="w-1/3 text-right ml-4">
+          <div className="mb-4">
+            <p><b>Invoice No:</b> {invoice_number}</p>
+            <p><b>Invoice Date:</b> {invoice_date}</p>
+            <p><b>Due Date:</b> {due_date}</p>
+          </div>
+          <div>
+            <h4 className="font-bold">Payment Information</h4>
+            <p><b>Bank Name:</b> {bankDetails?.bank_name}</p>
+            <p><b>Account Number:</b> {bankDetails?.account_number}</p>
+            <p><b>IFSC Code:</b> {bankDetails?.ifsc_code}</p>
+            <p><b>SWIFT Code:</b> {bankDetails?.swift_code}</p>
+            <p><b>MICR Code:</b> {bankDetails?.micr_code}</p>
+            <h4 className="font-bold">Payment Terms</h4>
+            <p>{payment_terms}</p>
+            <h4 className="font-bold">Currency</h4>
+            <p>{currency_type}</p>
+            <h4 className="font-bold">Total Due</h4>
+            <p>{total_due} {currency_type}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-4">
+        <h4 className="font-bold">Note:</h4>
+        <p>
+          Please make the payment of {total_due} {currency_type} to the bank account details provided above. Upon receiving the payment, we will proceed with the services/products as agreed and provide a receipt for the payment received. Thank you for choosing {branchDetails?.branch_name}. If you have any questions or require further assistance, please don't hesitate to contact us at {branchDetails?.phone} or {branchDetails?.email}.
+        </p>
+      </div>
+
+      <div className="flex justify-end mb-4">
+        <img src={stamp} alt="Stamp" className="w-24 h-24" />
+      </div>
+
+      <div className="text-center mb-4">
+        <button
+          className="bg-black text-white hover:bg-white hover:text-black border text-sm font-bold px-3 py-3 rounded w-full col-span-2 transition-colors duration-300"
+          onClick={() => window.print()}
+        >
+          Print
+        </button>
+      </div>
+
+      <footer className="text-center text-sm">
+        <p>{branchDetails?.branch_name}</p>
+      </footer>
+    </div>
   );
 };
 

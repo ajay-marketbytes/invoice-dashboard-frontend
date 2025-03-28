@@ -63,7 +63,7 @@ const Profile = () => {
               alt="Profile"
               className="w-32 h-32 rounded-full object-cover border-2 border-gray-300"
             />
-            <label className="absolute bottom-2 right-0 bg-black text-white font-bold hover:bg-gray-900 px-2.5 py-1 rounded-full cursor-pointer">
+            <label className="absolute bottom-2 right-0 px-2.5 py-1 bg-black text-white hover:bg-white hover:text-black border text-sm font-bold transition-colors duration-300 rounded-full cursor-pointer">
               +
               <input
                 type="file"
@@ -101,7 +101,7 @@ const Profile = () => {
           </div>
           <button
             type="submit"
-            className="w-full bg-black text-white py-2 rounded-md text-sm font-bold hover:bg-gray-900 transition-colors duration-300"
+            className="bg-black text-white hover:bg-white hover:text-black border text-sm font-bold px-3 py-3 rounded w-full transition-colors duration-300"
           >
             Save Profile
           </button>
@@ -115,7 +115,7 @@ const Profile = () => {
           </p>
           <button
             onClick={() => setShowResetForm(!showResetForm)}
-            className="bg-black text-white px-3 py-2 rounded-md text-sm font-bold hover:bg-gray-900 transition-colors duration-300"
+            className="bg-black text-white hover:bg-white hover:text-black border text-sm font-bold px-3 py-3 rounded w-full transition-colors duration-300"
           >
             {showResetForm ? "Cancel" : "Reset Password"}
           </button>
@@ -145,7 +145,7 @@ const Profile = () => {
             </div>
             <button
               type="submit"
-              className="w-full bg-black text-white px-3 py-2 rounded-md text-sm font-bold hover:bg-gray-900 transition-colors duration-300"
+              className="bg-black text-white hover:bg-white hover:text-black border text-sm font-bold px-3 py-3 rounded w-full transition-colors duration-300"
             >
               Submit
             </button>

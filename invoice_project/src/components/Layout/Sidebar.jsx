@@ -20,8 +20,8 @@ const Sidebar = () => {
     invoice: [
       { name: "Create Invoice", path: "/invoice/create" },
       { name: "Proforma Invoice", path: "/invoice/proforma" },
-      { name: "Final Invoices", path: "/invoice/final" },
-      { name: "Invoice Note", path: "/invoice/invoice-note" },
+      // { name: "Final Invoices", path: "/invoice/final" },
+      // { name: "Invoice Note", path: "/invoice/invoice-note" },
     ],
     tax: [
       { name: "Add Tax", path: "/tax/add" },
