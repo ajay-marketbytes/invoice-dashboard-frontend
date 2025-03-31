@@ -128,6 +128,16 @@ const Sidebar = () => {
         >
           Profile
         </NavLink>
+        <NavLink
+          to="/additional-settings"
+          className={({ isActive }) =>
+            `block mb-2 px-4 py-2 text-sm font-medium rounded-sm ${isActive ? "bg-gray-400 text-black" : "text-black hover:bg-gray-400"
+            } transition-colors duration-300`
+          }
+          onClick={() => handleNavigation("/additional-settings")}
+        >
+          Additional Settings
+        </NavLink>
       </div>
     </div>
   );

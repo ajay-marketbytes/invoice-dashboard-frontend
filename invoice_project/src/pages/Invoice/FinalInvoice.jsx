@@ -91,7 +91,7 @@ const FinalInvoice = () => {
   }
 
   const {
-    invoice_number,
+    final_invoice_number, 
     invoice_date,
     due_date,
     client,
@@ -101,9 +101,8 @@ const FinalInvoice = () => {
     total_due,
     currency_type,
     payment_terms,
-    gst_rate,
     subtotal,
-    totalTax,
+    gst,
     shipping,
     discount,
     amount_paid,
@@ -113,7 +112,7 @@ const FinalInvoice = () => {
   const branchDetails = branches.find(b => b.id === branch_address);
   const bankDetails = bankAccounts.find(ba => ba.id === bank_account);
 
-  const totalInWords = numberToWords(total_due);
+  const totalInWords = numberToWords(Math.round(total_due));
 
   return (
     <div className="w-[21cm] h-[29.7cm] mx-auto p-5 box-border font-sans">
@@ -124,19 +123,19 @@ const FinalInvoice = () => {
         <div className="w-3/4 flex justify-between">
           <div className="w-1/2">
             <h4 className="font-bold">Invoice to:</h4>
-            <p>{clientDetails?.client_name}</p>
-            <p>{clientDetails?.address}</p>
-            <p><b>GSTIN:</b> {clientDetails?.gst}</p>
-            <p><b>P:</b> {clientDetails?.phone}</p>
-            <p><b>W:</b> {clientDetails?.website}</p>
+            <p>{clientDetails?.client_name || "Unknown Client"}</p>
+            <p>{clientDetails?.address || "N/A"}</p>
+            <p><b>GSTIN:</b> {clientDetails?.gst || "N/A"}</p>
+            <p><b>P:</b> {clientDetails?.phone || "N/A"}</p>
+            <p><b>W:</b> {clientDetails?.website || "N/A"}</p>
           </div>
           <div className="w-1/2">
             <h4 className="font-bold">Invoice from:</h4>
-            <p>{branchDetails?.branch_name}</p>
-            <p>{branchDetails?.branch_address}</p>
-            <p><b>GSTIN:</b> {branchDetails?.gstin}</p>
-            <p><b>P:</b> {branchDetails?.phone}</p>
-            <p><b>W:</b> {branchDetails?.website}</p>
+            <p>{branchDetails?.branch_name || "Unknown Branch"}</p>
+            <p>{branchDetails?.branch_address || "N/A"}</p>
+            <p><b>GSTIN:</b> {branchDetails?.gstin || "N/A"}</p>
+            <p><b>P:</b> {branchDetails?.phone || "N/A"}</p>
+            <p><b>W:</b> {branchDetails?.website || "N/A"}</p>
           </div>
         </div>
       </div>
@@ -160,9 +159,9 @@ const FinalInvoice = () => {
             <tbody>
               {items?.map((item, index) => (
                 <tr key={index} className="border-b border-gray-300">
-                  <td className="p-2 bg-gray-100">{item.name}</td>
+                  <td className="p-2 bg-gray-100">{item.name || "N/A"}</td>
                   <td className="p-2 bg-gray-100">{item.quantity}</td>
-                  <td className="p-2 bg-gray-100">{item.total_gst}</td>
+                  <td className="p-2 bg-gray-100">{item.total_gst || "0.00"}</td>
                   <td className="p-2 bg-gray-100">{item.unit_cost}</td>
                   <td className="p-2 bg-gray-100">{item.total}</td>
                 </tr>
@@ -170,6 +169,10 @@ const FinalInvoice = () => {
               <tr className="border-b border-gray-300">
                 <td colSpan="2" className="text-right font-bold p-2 bg-gray-200">Subtotal</td>
                 <td colSpan="3" className="text-right font-bold p-2 bg-gray-200">{subtotal} {currency_type}</td>
+              </tr>
+              <tr className="border-b border-gray-300">
+                <td colSpan="2" className="text-right font-bold p-2 bg-gray-200">GST</td>
+                <td colSpan="3" className="text-right font-bold p-2 bg-gray-200">{gst} {currency_type}</td>
               </tr>
               <tr className="border-b border-gray-300">
                 <td colSpan="2" className="text-right font-bold p-2 bg-gray-200">Shipping</td>
@@ -197,19 +200,19 @@ const FinalInvoice = () => {
 
         <div className="w-1/3 text-right ml-4">
           <div className="mb-4">
-            <p><b>Invoice No:</b> {invoice_number}</p>
+            <p><b>Invoice No:</b> {final_invoice_number || "Pending Finalization"}</p>
             <p><b>Invoice Date:</b> {invoice_date}</p>
             <p><b>Due Date:</b> {due_date}</p>
           </div>
           <div>
             <h4 className="font-bold">Payment Information</h4>
-            <p><b>Bank Name:</b> {bankDetails?.bank_name}</p>
-            <p><b>Account Number:</b> {bankDetails?.account_number}</p>
-            <p><b>IFSC Code:</b> {bankDetails?.ifsc_code}</p>
-            <p><b>SWIFT Code:</b> {bankDetails?.swift_code}</p>
-            <p><b>MICR Code:</b> {bankDetails?.micr_code}</p>
+            <p><b>Bank Name:</b> {bankDetails?.bank_name || "N/A"}</p>
+            <p><b>Account Number:</b> {bankDetails?.account_number || "N/A"}</p>
+            <p><b>IFSC Code:</b> {bankDetails?.ifsc_code || "N/A"}</p>
+            <p><b>SWIFT Code:</b> {bankDetails?.swift_code || "N/A"}</p>
+            <p><b>MICR Code:</b> {bankDetails?.micr_code || "N/A"}</p>
             <h4 className="font-bold">Payment Terms</h4>
-            <p>{payment_terms}</p>
+            <p>{payment_terms || "N/A"}</p>
             <h4 className="font-bold">Currency</h4>
             <p>{currency_type}</p>
             <h4 className="font-bold">Total Due</h4>
@@ -221,7 +224,7 @@ const FinalInvoice = () => {
       <div className="mb-4">
         <h4 className="font-bold">Note:</h4>
         <p>
-          Please make the payment of {total_due} {currency_type} to the bank account details provided above. Upon receiving the payment, we will proceed with the services/products as agreed and provide a receipt for the payment received. Thank you for choosing {branchDetails?.branch_name}. If you have any questions or require further assistance, please don't hesitate to contact us at {branchDetails?.phone} or {branchDetails?.email}.
+          Please make the payment of {total_due} {currency_type} to the bank account details provided above. Upon receiving the payment, we will proceed with the services/products as agreed and provide a receipt for the payment received. Thank you for choosing {branchDetails?.branch_name || "our company"}. If you have any questions or require further assistance, please don't hesitate to contact us at {branchDetails?.phone || "N/A"} or {branchDetails?.email || "N/A"}.
         </p>
       </div>
 
@@ -239,7 +242,7 @@ const FinalInvoice = () => {
       </div>
 
       <footer className="text-center text-sm">
-        <p>{branchDetails?.branch_name}</p>
+        <p>{branchDetails?.branch_name || "Company Name"}</p>
       </footer>
     </div>
   );

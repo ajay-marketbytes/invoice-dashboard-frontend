@@ -74,8 +74,14 @@ const ProformaInvoice = () => {
     navigate("/invoice/edit", { state: { invoice } });
   };
 
-  const handleMoveToFinal = (invoice) => {
-    navigate("/invoice/final", { state: { invoice } });
+  const handleMoveToFinal = async (invoice) => {
+    try {
+      const response = await apiClient.patch(`/invoices/invoices/${invoice.id}/`, { is_final: true });
+      navigate("/invoice/final", { state: { invoice: response.data } });
+    } catch (error) {
+      console.error("Error moving to final:", error);
+      alert("Failed to move to final invoice.");
+    }
   };
 
   const closeModal = () => {
