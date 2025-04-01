@@ -1,26 +1,53 @@
-import React, { useState } from "react";
-import { Outlet } from "react-router";
-import Sidebar from "./Sidebar";
-import Topbar from "./Topbar";
-
-const Layout = ({ onLogout }) => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
+import React, { useState, useEffect } from 'react';
+import { Outlet } from 'react-router';
+import Sidebar from './Sidebar';
+import Topbar from './Topbar';
+import { motion } from 'framer-motion';
+import apiClient from '../../api/apiClient';
+ 
+const MEDIA_URL = 'http://127.0.0.1:8000';
+ 
+const Layout = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [userAvatar, setUserAvatar] = useState(null);
+  const [username, setUsername] = useState('');
+ 
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await apiClient.get('/auth/profile/');
+        setUserAvatar(response.data.avatar ? `${MEDIA_URL}${response.data.avatar}` : 'https://via.placeholder.com/80');
+        setUsername(response.data.username || 'User');
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+        setUserAvatar('https://via.placeholder.com/80');
+        setUsername('User');
+      }
+    };
+ 
+    fetchProfile();
+  }, []);
+ 
   return (
-    <div className="flex h-screen">
-      <Sidebar isOpen={isSidebarOpen} />
-      <div className="flex-1 flex flex-col">
-        <Topbar onLogout={onLogout} toggleSidebar={toggleSidebar} />
-        <div className="bg-gray-200 flex-1 overflow-x-hidden overflow-y-auto z-0 bg-gradient-to-l from-gray-100 to-gray-300 pl-[288px] pt-[80px]">
+    <div className="flex flex-col min-h-screen">
+      <Topbar
+        toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        userAvatar={userAvatar}
+        username={username}
+      />
+      <div className="flex flex-1">
+        <Sidebar isOpen={isSidebarOpen} />
+        <motion.main
+          className="flex-1 py-20 px-4 bg-gradient-to-t from-gray-100 to-gray-200"
+          initial={{ marginLeft: 300 }}
+          animate={{ marginLeft: isSidebarOpen ? 300 : 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+        >
           <Outlet />
-        </div>
+        </motion.main>
       </div>
     </div>
   );
 };
-
+ 
 export default Layout;

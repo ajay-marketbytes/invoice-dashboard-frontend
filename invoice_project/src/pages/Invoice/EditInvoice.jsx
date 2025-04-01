@@ -53,7 +53,7 @@ const EditInvoice = () => {
   const [services, setServices] = useState([]);
   const [invoiceItems, setInvoiceItems] = useState(
     invoice?.items?.map((item) => ({
-      id: item.id, // Preserve item ID for updates
+      id: item.id,
       itemName: item.name || (products.find((p) => p.id === item.product)?.name || ""),
       quantity: item.quantity,
       unitCost: parseFloat(item.unit_cost),
@@ -238,14 +238,6 @@ const EditInvoice = () => {
 
         <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-4">
-            <FormField
-              label="Invoice Number"
-              name="invoice_number"
-              register={register}
-              error={errors.invoiceNumber}
-              placeholder="Enter invoice number"
-              disabled
-            />
             <FormField
               label="Invoice Type*"
               name="invoice_type"

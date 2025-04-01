@@ -1,23 +1,50 @@
-import React, { useState, useEffect } from "react";
-import { UserCog, Search } from "./../Icons";
-import profilePicture from "../../assets/images/profile-icon.jpg";
-import { useNavigate, Link, useLocation } from "react-router-dom";
-import { useDebounce } from "use-debounce";
-import apiClient from "../../api/apiClient";
+import React, { useState, useEffect } from 'react';
+import { Text, Settings, User, LogOut, Bell, Search } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useDebounce } from 'use-debounce';
+import apiClient from '../../api/apiClient';
+import logo from "../../assets/images/logo.png";
 
-const Topbar = ({ onLogout }) => {
+const Topbar = ({ toggleSidebar }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
-  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false);
-  const navigate = useNavigate();
+  const [debouncedSearchQuery] = useDebounce(searchQuery, 300);
+  const [userData, setUserData] = useState({ username: '', avatar: 'https://placehold.co/80x80' }); 
   const location = useLocation();
-  const [debouncedSearchTerm] = useDebounce(searchTerm, 300);
+  const navigate = useNavigate();
+
+  const BASE_URL = apiClient.defaults.baseURL.replace('/api', '');
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const response = await apiClient.get('/auth/profile/');
+        const avatarUrl = response.data.avatar 
+          ? `${BASE_URL}${response.data.avatar}` 
+          : 'https://placehold.co/80x80';
+        setUserData({
+          username: response.data.username,
+          avatar: avatarUrl,
+        });
+      } catch (error) {
+        console.error("Failed to fetch user data:", error);
+        setUserData({ username: '', avatar: 'https://placehold.co/80x80' }); 
+      }
+    };
+    fetchUserData();
+  }, [BASE_URL]);
+
+  const getPageName = () => {
+    const path = location.pathname.split('/')[1];
+    return path.charAt(0).toUpperCase() + path.slice(1) || 'Dashboard';
+  };
 
   useEffect(() => {
     const fetchSearchResults = async () => {
-      if (!debouncedSearchTerm.trim()) {
+      if (!debouncedSearchQuery.trim()) {
         setSearchResults([]);
         setIsSearchDropdownOpen(false);
         return;
@@ -47,7 +74,7 @@ const Topbar = ({ onLogout }) => {
             type: "Invoice",
             id: item.id,
             name: item.invoice_number || `Invoice ${item.id}`,
-            path: `/invoice/proforma`, 
+            path: `/invoice/proforma`,
           })),
           ...productsResponse.data.map((item) => ({
             type: "Product",
@@ -86,7 +113,7 @@ const Topbar = ({ onLogout }) => {
             path: "/tax/view",
           })),
         ].filter((item) =>
-          item.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
+          item.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
         );
 
         setSearchResults(results);
@@ -99,91 +126,67 @@ const Topbar = ({ onLogout }) => {
     };
 
     fetchSearchResults();
-  }, [debouncedSearchTerm]);
+  }, [debouncedSearchQuery]);
 
   const handleResultClick = (path) => {
-    setSearchTerm("");
+    setSearchQuery("");
     setSearchResults([]);
     setIsSearchDropdownOpen(false);
     navigate(path);
   };
 
-  const getActiveLocationName = () => {
-    const path = location.pathname;
-    if (path === "/") return { name: "Dashboard", nested: null };
-    if (path === "/invoice/create") return { name: "Invoices", nested: "Create Invoice" };
-    if (path === "/invoice/proforma") return { name: "Invoices", nested: "Proforma Invoice" };
-    if (path === "/invoice/edit") return { name: "Invoices", nested: "Edit Invoice" };
-    if (path === "/invoice/invoice-note") return { name: "Invoices", nested: "Invoice Note" };
-    if (path === "/tax/add") return { name: "Tax", nested: "Add Tax" };
-    if (path === "/tax/view") return { name: "Tax", nested: "View Tax" };
-    if (path === "/products/add") return { name: "Products & Services", nested: "Add Products" };
-    if (path === "/products/view") return { name: "Products & Services", nested: "View Products" };
-    if (path === "/services/add") return { name: "Products & Services", nested: "Add Service" };
-    if (path === "/services/view") return { name: "Products & Services", nested: "View Service" };
-    if (path === "/clients/add") return { name: "Clients", nested: "Add Clients" };
-    if (path === "/clients/view") return { name: "Clients", nested: "View Clients" };
-    if (path === "/address/add") return { name: "Address", nested: "Add Address" };
-    if (path === "/address/view") return { name: "Address", nested: "View Address" };
-    if (path === "/bank-account/add") return { name: "Bank Account", nested: "Add Bank Account" };
-    if (path === "/bank-account/view") return { name: "Bank Account", nested: "View Bank Account" };
-    if (path === "/profile") return { name: "Profile", nested: null };
-    return { name: "Location?", nested: null };
-  };
-
-  const activeLocation = getActiveLocationName();
-
-  const handleLogout = async () => {
-    const refreshToken = localStorage.getItem("refreshToken");
-
-    if (!refreshToken) {
-      console.error("No refresh token found");
-      navigate("/login");
-      return;
-    }
-
-    try {
-      const response = await apiClient.post("logout/", {
-        refresh: refreshToken,
+  const handleLogout = () => {
+    apiClient.post('/auth/logout/', { 
+      refresh: localStorage.getItem('refresh_token') || sessionStorage.getItem('refresh_token')
+    })
+      .then(() => {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        sessionStorage.removeItem('access_token');
+        sessionStorage.removeItem('refresh_token');
+        navigate('/login');
+      })
+      .catch(error => {
+        console.error('Logout failed:', error);
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        sessionStorage.removeItem('access_token');
+        sessionStorage.removeItem('refresh_token');
+        navigate('/login');
       });
-      console.log("Logout successful", response);
-    } catch (error) {
-      console.error(
-        "Logout failed:",
-        error.response ? error.response.data : error
-      );
-    } finally {
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      onLogout();
-      navigate("/login");
-    }
   };
 
   return (
-    <div className="bg-gray-100 shadow flex items-center justify-between px-4 h-20 fixed top-0 left-0 right-0 z-40">
-      <div className="container mx-auto flex items-center justify-between px-4">
-        <div className="relative left-72 flex items-center space-x-4">
-          <div className="text-xs font-extrabold text-gray-600">
-            <span>{activeLocation.name}</span>
-            {activeLocation.nested && (
-              <span className="ml-1 font-medium">: {activeLocation.nested}</span>
-            )}
-          </div>
-          <div className="relative hidden md:flex items-center w-64">
-            <Search className="absolute left-3 text-gray-500" />
+    <div className="fixed top-0 left-0 right-0 h-16 bg-gray-50 shadow-md flex items-center justify-between px-4 z-50">
+      <div className="flex items-center">
+        <div className='flex items-center justify-center w-[255px]'>
+          <img src={logo} alt="Crossroads" className="w-10 rounded-full" />
+        </div>
+        <button
+          onClick={toggleSidebar}
+          className="p-2 rounded-xs transition-all duration-200 relative overflow-hidden group"
+        >
+          <div className="absolute inset-0" />
+          <Text
+            className="w-10 h-10 border p-2 border-gray-200 hover:border-none hover:bg-gray-200 rounded-lg text-gray-800 relative transition-colors duration-300 group-hover:text-gray-800"
+            strokeWidth={1.5}
+          />
+        </button>
+        <div className="relative ml-4">
+          <div className="relative flex items-center">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" strokeWidth={1.5} size={18} />
             <input
-              type="search"
-              placeholder="Type to search..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onFocus={() => debouncedSearchTerm && setIsSearchDropdownOpen(true)}
-              className="py-2 pl-2 pr-2 rounded-md focus:outline-none w-full text-xs bg-transparent"
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => debouncedSearchQuery && setIsSearchDropdownOpen(true)}
+              placeholder="Search here..."
+              className="w-64 px-4 py-2 pl-10 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-200"
               disabled={isLoading}
               aria-label="Search Input"
             />
             {isLoading && (
-              <span className="ml-4 text-xs font-medium text-indigo-500">
+              <span className="ml-4 text-xs font-medium text-blue-500">
                 Searching...
               </span>
             )}
@@ -196,7 +199,7 @@ const Topbar = ({ onLogout }) => {
                   searchResults.map((result) => (
                     <div
                       key={`${result.type}-${result.id}`}
-                      className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                      className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer transition-all duration-200"
                       onClick={() => handleResultClick(result.path)}
                     >
                       <span className="font-bold">{result.type}:</span> {result.name}
@@ -211,23 +214,76 @@ const Topbar = ({ onLogout }) => {
             )}
           </div>
         </div>
-        <div className="flex items-center space-x-4">
-          <div className="hidden md:block text-right">
-            <span className="text-xs font-extrabold text-gray-600">Invoice Dashboard</span>
-            <span className="text-xs font-light text-indigo-500 block">Admin</span>
-          </div>
-          <img src={profilePicture} alt="Profile" className="w-10 h-10 rounded-full" />
-          <div className="relative">
-            <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="text-indigo-500 hover:text-indigo-500">
-              <UserCog />
+        <div className="ml-4 text-sm font-medium text-gray-800">
+          {getPageName()}
+        </div>
+      </div>
+      <div className="relative flex items-center mr-12">
+        <button
+          className="p-2 rounded-xs transition-all duration-200 relative overflow-hidden group"
+        >
+          <div className="absolute inset-0" />
+          <Bell
+            className="w-10 h-10 border p-2 border-gray-200 hover:border-none hover:bg-gray-200 rounded-full text-gray-800 relative transition-colors duration-300 group-hover:text-gray-800"
+            strokeWidth={1.5}
+          />
+        </button>
+        <button
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          className="p-2 rounded-xs transition-all duration-200 relative overflow-hidden group"
+        >
+          <div className="absolute inset-0" />
+          <Settings
+            className="w-10 h-10 border p-2 border-gray-200 hover:border-none hover:bg-gray-200 rounded-full text-gray-800 relative transition-colors duration-300 group-hover:text-gray-800"
+            strokeWidth={1.5}
+          />
+        </button>
+        {isDropdownOpen && (
+          <div className="absolute top-16 -right-12 w-48 bg-white rounded-md shadow-lg z-20">
+            <button
+              onClick={() => {
+                navigate('/profile');
+                setIsDropdownOpen(false);
+              }}
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-800 rounded-t-md transition-all duration-200 relative overflow-hidden group"
+            >
+              <div className="absolute inset-0 bg-gray-100 transition-opacity duration-300 opacity-0 group-hover:opacity-100" />
+              <User
+                strokeWidth={1.5}
+                className="w-5 h-5 mr-2 text-gray-800 relative transition-colors duration-300 group-hover:text-gray-800"
+              />
+              <span className="relative transition-colors duration-300 group-hover:text-gray-800">
+                Profile Settings
+              </span>
             </button>
-            {isDropdownOpen && (
-              <div className="absolute right-0 bg-white shadow-lg rounded-md w-36">
-                <Link to="/profile" className="block  px-4 py-2 text-sm hover:bg-gray-200">Profile</Link>
-                <button onClick={handleLogout} className="px-4 py-2 text-sm hover:bg-gray-200 w-full text-left">Logout</button>
-              </div>
-            )}
+            <button
+              onClick={() => {
+                handleLogout();
+                setIsDropdownOpen(false);
+              }}
+              className="flex items-center w-full px-4 py-2 text-sm text-gray-800 rounded-b-md transition-all duration-200 relative overflow-hidden group"
+            >
+              <div className="absolute inset-0 bg-gray-100 transition-opacity duration-300 opacity-0 group-hover:opacity-100" />
+              <LogOut
+                strokeWidth={1.5}
+                className="w-5 h-5 mr-2 text-gray-800 relative transition-colors duration-300 group-hover:text-gray-800"
+              />
+              <span className="relative transition-colors duration-300 group-hover:text-gray-800">
+                Logout
+              </span>
+            </button>
           </div>
+        )}
+        <div className="flex items-center space-x-2">
+          <img
+            src={userData.avatar}
+            alt="Profile"
+            className="w-10 h-10 object-cover rounded-full cursor-pointer ml-2"
+            onError={(e) => (e.target.src = 'https://placehold.co/80x80')}
+          />
+          <span className="text-sm font-medium text-gray-800 ml-2">
+            {userData.username}
+          </span>
         </div>
       </div>
     </div>

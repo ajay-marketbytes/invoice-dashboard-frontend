@@ -142,15 +142,15 @@ const CreateInvoice = () => {
         discount: parseFloat(data.discount).toString() || "0.00",
         shipping: parseFloat(data.shipping).toString() || "0.00",
         amount_paid: parseFloat(data.amountPaid).toString() || "0.00",
-        items: [],
+        items: [], 
       };
-
+  
       console.log("Invoice Data:", JSON.stringify(invoiceData, null, 2));
-
+  
       const invoiceResponse = await apiClient.post("invoices/invoices/", invoiceData);
       const invoiceId = invoiceResponse.data.id;
       console.log("Invoice Created:", invoiceResponse.data);
-
+  
       const itemPromises = invoiceItems.map(async (item) => {
         const itemData = {
           invoice: invoiceId,
@@ -160,17 +160,17 @@ const CreateInvoice = () => {
           quantity: item.quantity,
           unit_cost: item.unitCost.toString(),
         };
-
+  
         console.log("Item Data:", JSON.stringify(itemData, null, 2));
         return apiClient.post("invoices/invoice-items/", itemData);
       });
-
+  
       await Promise.all(itemPromises);
       console.log("All items created successfully");
-
+  
       const updatedInvoiceResponse = await apiClient.get(`invoices/invoices/${invoiceId}/`);
       console.log("Updated Invoice:", JSON.stringify(updatedInvoiceResponse.data, null, 2));
-
+  
       alert("Invoice and items created successfully!");
       navigate("/invoice/proforma");
     } catch (error) {
@@ -197,14 +197,14 @@ const CreateInvoice = () => {
           className="grid grid-cols-1 md:grid-cols-2 gap-8"
         >
           <div className="space-y-4">
-            <FormField
+            {/* <FormField
               label="Invoice Number"
               name="invoiceNumber"
               register={register}
               error={errors.invoiceNumber}
               placeholder="Enter invoice number"
               required
-            />
+            /> */}
             <FormField
               label="Invoice Type"
               name="invoiceType"

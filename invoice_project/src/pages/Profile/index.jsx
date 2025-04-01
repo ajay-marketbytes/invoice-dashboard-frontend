@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import apiClient from "../../api/apiClient";
@@ -10,23 +10,60 @@ const Profile = () => {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm();
   const [profileImage, setProfileImage] = useState(profilePic);
   const [showResetForm, setShowResetForm] = useState(false);
 
-  const handleImageChange = (e) => {
+  const BASE_URL = apiClient.defaults.baseURL.replace('/api', ''); 
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await apiClient.get('/auth/profile/');
+        const userData = response.data;
+        setValue('name', `${userData.first_name} ${userData.last_name}`.trim());
+        setValue('username', userData.username);
+        setValue('email', userData.email);
+        if (userData.avatar) {
+          const fullImageUrl = `${BASE_URL}${userData.avatar}`;
+          setProfileImage(fullImageUrl);
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+      }
+    };
+    fetchProfile();
+  }, [setValue, BASE_URL]);
+
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const imageUrl = URL.createObjectURL(file);
+      const imageUrl = URL.createObjectURL(file); 
       setProfileImage(imageUrl);
+      const formData = new FormData();
+      formData.append('avatar', file);
+      try {
+        const response = await apiClient.put('/auth/profile/', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        if (response.data.avatar) {
+          setProfileImage(`${BASE_URL}${response.data.avatar}`);
+        }
+      } catch (error) {
+        console.error("Failed to upload avatar:", error);
+        setProfileImage(profilePic);
+      }
     }
   };
 
   const onSubmitProfile = async (data) => {
     try {
-      await apiClient.post("update_profile/", {
-        name: data.name,
+      const [first_name, ...last_name] = data.name.split(' ');
+      await apiClient.put("/auth/profile/", {
+        first_name,
+        last_name: last_name.join(' ') || '',
         username: data.username,
         email: data.email,
       });
@@ -34,19 +71,22 @@ const Profile = () => {
       navigate("/");
     } catch (error) {
       alert("Failed to update profile. Please try again.");
+      console.error(error);
     }
   };
 
   const onSubmitResetPassword = async (data) => {
     try {
-      await apiClient.post("reset_password/", {
+      await apiClient.post("/auth/change-password/", {
         current_password: data.currentPassword,
         new_password: data.newPassword,
+        confirm_new_password: data.newPassword,
       });
       alert("Password reset successfully!");
       setShowResetForm(false);
     } catch (error) {
       alert("Failed to reset password. Please try again.");
+      console.error(error);
     }
   };
 
@@ -62,6 +102,7 @@ const Profile = () => {
               src={profileImage}
               alt="Profile"
               className="w-32 h-32 rounded-full object-cover border-2 border-gray-300"
+              onError={(e) => (e.target.src = profilePic)}
             />
             <label className="absolute bottom-2 right-0 px-2.5 py-1 bg-black text-white hover:bg-white hover:text-black border text-sm font-bold transition-colors duration-300 rounded-full cursor-pointer">
               +
@@ -108,16 +149,16 @@ const Profile = () => {
         </form>
         <div className="mt-8">
           <h3 className="text-xl font-semibold text-gray-800 mb-2">
-            Forgot Password?
+            Change Password
           </h3>
           <p className="text-gray-600 mb-4">
-            If you’ve forgotten your password, you can reset it here.
+            Update your password here.
           </p>
           <button
             onClick={() => setShowResetForm(!showResetForm)}
             className="bg-black text-white hover:bg-white hover:text-black border text-sm font-bold px-3 py-3 rounded w-full transition-colors duration-300"
           >
-            {showResetForm ? "Cancel" : "Reset Password"}
+            {showResetForm ? "Cancel" : "Change Password"}
           </button>
         </div>
         {showResetForm && (

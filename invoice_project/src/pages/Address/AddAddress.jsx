@@ -15,6 +15,7 @@ const AddAddress = () => {
   const onSubmit = async (data) => {
     try {
       await apiClient.post("branch/branch_addresses/", {
+        branch_name: data.branchName,
         branch_address: data.branchAddress,
         state: data.state,
         city: data.city,
@@ -38,6 +39,13 @@ const AddAddress = () => {
           Add Branch Address
         </h2>
         <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-2 gap-4">
+        <FormField
+            label="Branch Name"
+            placeholder="Enter branch name..."
+            name="branchName"
+            register={register}
+            error={errors.branchName}
+          />
           <FormField
             label="Branch Address"
             placeholder="Enter branch address..."

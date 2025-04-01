@@ -1,26 +1,24 @@
 import React from "react";
 import { useForm } from "react-hook-form";
-import { useNavigate, Link } from "react-router-dom"; // Added Link for navigation
+import { useNavigate, Link } from "react-router-dom";
 import apiClient from "../../api/apiClient";
 import FormField from "../../components/FormField";
-import loginImage from "../../assets/images/MB.jpg"; 
+import loginImage from "../../assets/images/MB.jpg";
 
-const Login = ({ onLogin }) => {
+const ForgotPassword = () => {
   const { register, handleSubmit, formState: { errors } } = useForm();
   const navigate = useNavigate();
 
   const onSubmit = async (data) => {
     try {
-      const response = await apiClient.post("/auth/login/", {
+      const response = await apiClient.post("/auth/forgot-password/", {
         email: data.email,
-        password: data.password,
       });
-      const { access, refresh } = response.data;
-      onLogin(access, refresh);
-      navigate("/");
+      alert(response.data.message || "OTP sent to your email");
+      navigate("/otp-verification", { state: { email: data.email } });
     } catch (error) {
-      console.error("Login failed:", error);
-      alert("Invalid credentials");
+      console.error("Forgot password failed:", error);
+      alert(error.response?.data?.error || "Failed to send OTP");
     }
   };
 
@@ -31,7 +29,7 @@ const Login = ({ onLogin }) => {
         </div>
 
         <div className="w-full md:w-1/2 p-8 bg-white">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Login</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Forgot Password</h2>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               label="Email"
@@ -42,28 +40,19 @@ const Login = ({ onLogin }) => {
               required={true}
               error={errors.email}
             />
-            <FormField
-              label="Password"
-              name="password"
-              type="password"
-              placeholder="Enter your password..."
-              register={register}
-              required={true}
-              error={errors.password}
-            />
             <div className="text-right">
               <Link
-                to="/forgot-password"
+                to="/login"
                 className="text-sm text-gray-800 hover:underline"
               >
-                Forgot Password?
+                Click here to go login...
               </Link>
             </div>
             <button
               type="submit"
               className="w-full bg-black text-white py-2 rounded-md hover:bg-gray-800 transition-colors duration-300"
             >
-              Login
+              Send OTP
             </button>
           </form>
         </div>
@@ -72,4 +61,4 @@ const Login = ({ onLogin }) => {
   );
 };
 
-export default Login;
+export default ForgotPassword;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FileText, Eye, Trash2, Pencil, Check } from "lucide-react";
+import { FileText, Eye, Trash2, Pencil, Check, Printer, X } from "lucide-react"; 
 import apiClient from "../../api/apiClient";
 import { useNavigate } from "react-router-dom";
 
@@ -8,7 +8,7 @@ const ProformaInvoice = () => {
   const [invoices, setInvoices] = useState([]);
   const [clients, setClients] = useState([]);
   const [branches, setBranches] = useState([]);
-  const [bankAccounts, setBankAccounts] = useState([]); // Added for bank accounts
+  const [bankAccounts, setBankAccounts] = useState([]);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -21,9 +21,9 @@ const ProformaInvoice = () => {
           apiClient.get("invoices/invoices/"),
           apiClient.get("clients/clients/"),
           apiClient.get("branch/branch_addresses/"),
-          apiClient.get("bank/bank-accounts/"), // Fetch bank accounts
+          apiClient.get("bank/bank-accounts/"),
         ]);
-        setInvoices(invoicesResponse.data);
+        setInvoices(invoicesResponse.data.filter(inv => !inv.is_final && !inv.is_saved_final));
         setClients(clientsResponse.data);
         setBranches(branchesResponse.data);
         setBankAccounts(bankAccountsResponse.data);
@@ -76,12 +76,17 @@ const ProformaInvoice = () => {
 
   const handleMoveToFinal = async (invoice) => {
     try {
-      const response = await apiClient.patch(`/invoices/invoices/${invoice.id}/`, { is_final: true });
-      navigate("/invoice/final", { state: { invoice: response.data } });
+      const response = await apiClient.patch(`invoices/invoices/${invoice.id}/`, { is_final: true });
+      const updatedInvoice = response.data;
+      navigate("/invoice/final-invoice-view", { state: { invoice: updatedInvoice } });
     } catch (error) {
       console.error("Error moving to final:", error);
       alert("Failed to move to final invoice.");
     }
+  };
+
+  const handleProformaPrint = (invoice) => {
+    navigate("/invoice/printed-proforma-invoice", { state: { invoice } }); 
   };
 
   const closeModal = () => {
@@ -94,11 +99,9 @@ const ProformaInvoice = () => {
 
   return (
     <div className="container mx-auto mt-10 px-4">
-      <h1 className="text-center text-3xl font-bold text-gray-800">
-        Proforma Invoices
-      </h1>
+      <h1 className="text-center text-3xl font-bold text-gray-800">Proforma Invoices</h1>
       <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
           {invoices.map((invoice) => (
             <div
               key={invoice.id}
@@ -136,7 +139,7 @@ const ProformaInvoice = () => {
                   </span>
                 </p>
               </div>
-              <div className="mt-5 flex justify-center space-x-4">
+              <div className="mt-5 flex justify-start space-x-4">
                 <button
                   className="flex items-center gap-2 bg-gray-900 text-white px-4 py-2 rounded-md font-semibold text-sm hover:bg-gray-800 transition-colors"
                   onClick={() => handleView(invoice)}
@@ -149,6 +152,12 @@ const ProformaInvoice = () => {
                 >
                   <Trash2 size={16} /> Delete
                 </button>
+                <button
+                  className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-md font-semibold text-sm hover:bg-green-600 transition-colors"
+                  onClick={() => handleMoveToFinal(invoice)}
+                >
+                  <Check size={16} /> Move to Final Invoice
+                </button>
               </div>
             </div>
           ))}
@@ -157,7 +166,7 @@ const ProformaInvoice = () => {
 
       {isModalOpen && selectedInvoice && (
         <div className="fixed inset-0 backdrop-brightness-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[70vh] overflow-y-auto">
+          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-3xl max-h-[70vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-4 text-gray-800">
               Invoice: {selectedInvoice.invoice_number}
             </h2>
@@ -207,7 +216,7 @@ const ProformaInvoice = () => {
               </div>
             )}
 
-            <div className="mt-6 flex justify-end space-x-4">
+            <div className="mt-6 flex mx-auto w-full items-center justify-start space-x-4">
               <button
                 className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-md font-semibold text-sm hover:bg-blue-600 transition-colors"
                 onClick={() => handleEdit(selectedInvoice)}
@@ -224,13 +233,19 @@ const ProformaInvoice = () => {
                 className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-md font-semibold text-sm hover:bg-green-600 transition-colors"
                 onClick={() => handleMoveToFinal(selectedInvoice)}
               >
-                <Check size={16} /> Move to Final
+                <Check size={16} /> Move to Final Invoice
               </button>
               <button
-                className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md font-semibold text-sm hover:bg-gray-400 transition-colors"
+                className="flex items-center gap-2 bg-gray-300 text-gray-800 px-4 py-2 rounded-md font-semibold text-sm hover:bg-gray-400 transition-colors"
+                onClick={() => handleProformaPrint(selectedInvoice)} 
+              >
+                <Printer size={16} /> Print
+              </button>
+              <button
+                className="flex items-center gap-2 bg-gray-300 text-gray-800 px-4 py-2 rounded-md font-semibold text-sm hover:bg-gray-400 transition-colors"
                 onClick={closeModal}
               >
-                Close
+                <X size={16} /> Close
               </button>
             </div>
           </div>

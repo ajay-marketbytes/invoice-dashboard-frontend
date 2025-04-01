@@ -30,6 +30,7 @@ const ViewAddress = () => {
   const handleEdit = (address) => {
     setEditingAddress(address.id);
     setEditedData({
+      branch_name: branch_name.branch_name,
       branch_address: address.branch_address,
       state: address.state,
       city: address.city,
@@ -88,6 +89,9 @@ const ViewAddress = () => {
                   ID
                 </th>
                 <th className="p-4 font-bold border-b border-gray-500 text-xs text-gray-800">
+                  Branch Name
+                </th>
+                <th className="p-4 font-bold border-b border-gray-500 text-xs text-gray-800">
                   Branch Address
                 </th>
                 <th className="p-4 font-bold border-b border-gray-500 text-xs text-gray-800">
@@ -120,6 +124,23 @@ const ViewAddress = () => {
                   className="border-b border-gray-500 hover:bg-gray-100"
                 >
                   <td className="p-4 align-middle">{address.id}</td>
+                  <td className="p-4 align-middle">
+                    {editingAddress === address.id ? (
+                      <FormField
+                        label="Edit Branch Name"
+                        name={`branch_address-${address.id}`}
+                        type="text"
+                        value={editedData.branch_name}
+                        onChange={(e) =>
+                          setEditedData({ ...editedData, branch_name: e.target.value })
+                        }
+                        className="w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-200"
+                        register={register}
+                      />
+                    ) : (
+                      address.branch_name
+                    )}
+                  </td>
                   <td className="p-4 align-middle">
                     {editingAddress === address.id ? (
                       <FormField
