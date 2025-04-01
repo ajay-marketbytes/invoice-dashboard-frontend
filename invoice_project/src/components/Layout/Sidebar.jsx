@@ -9,7 +9,7 @@ import {
   CreditCard,
   ChevronDown,
   FolderCog,
-  UserRoundPen,
+  UserCog,
   SquareKanban,
   MapPinHouse,
   Folders,
@@ -24,18 +24,13 @@ const iconComponents = {
   ChevronDown: ChevronDown,
   SquareKanban: SquareKanban,
   FolderCog: FolderCog,
-  UserRoundPen: UserRoundPen,
+  UserCog: UserCog,
   MapPinHouse: MapPinHouse,
   Folders: Folders,
 };
 
-const Dropdown = ({ label, links, icon }) => {
-  const [isOpen, setIsOpen] = useState(false);
+const Dropdown = ({ label, links, icon, isOpen, toggleDropdown }) => {
   const IconComponent = iconComponents[icon];
-
-  const toggleDropdown = () => {
-    setIsOpen(!isOpen);
-  };
 
   const dropdownVariants = {
     hidden: { opacity: 0, y: -10 },
@@ -54,18 +49,18 @@ const Dropdown = ({ label, links, icon }) => {
     <div className="relative">
       <motion.button
         onClick={toggleDropdown}
-        className="text-sm font-medium group flex items-center p-2 rounded-xs transition-all duration-200 relative overflow-hidden text-gray-800 w-full hover:bg-gray-400"
+        className="text-sm font-medium group flex items-center p-2 rounded-xs transition-all duration-200 relative overflow-hidden text-gray-800 w-full hover:bg-gray-500 hover:text-gray-50"
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
-        <IconComponent className="w-5 h-5 mr-3 transition-colors duration-300" />
+        <IconComponent className="w-5 h-5 mr-3 transition-colors duration-300 group-hover:text-gray-50" />
         {label}
         <motion.div
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{ duration: 0.3 }}
-          className="absolute right-0"
+          className="absolute right-2"
         >
-          <ChevronDown className="w-4 h-4 ml-2" />
+          <ChevronDown className="w-4 h-4 ml-2 group-hover:text-gray-50" />
         </motion.div>
       </motion.button>
       <AnimatePresence>
@@ -96,8 +91,8 @@ const Dropdown = ({ label, links, icon }) => {
                   className={({ isActive }) =>
                     `block px-4 py-2 text-sm font-medium ${
                       isActive
-                        ? "bg-gray-400 text-black"
-                        : "text-black hover:bg-gray-100"
+                        ? "bg-gray-500 text-gray-50"
+                        : "text-black hover:bg-gray-500 hover:text-gray-50"
                     } transition-colors duration-300`
                   }
                 >
@@ -113,6 +108,8 @@ const Dropdown = ({ label, links, icon }) => {
 };
 
 const Sidebar = ({ isOpen }) => {
+  const [openDropdown, setOpenDropdown] = useState(null);
+
   const sidebarVariants = {
     open: {
       width: 300,
@@ -216,7 +213,7 @@ const Sidebar = ({ isOpen }) => {
       type: "link",
       to: "/profile",
       label: "Profile",
-      icon: "UserRoundPen",
+      icon: "UserCog",
     },
     {
       type: "link",
@@ -226,12 +223,16 @@ const Sidebar = ({ isOpen }) => {
     },
   ];
 
+  const handleToggleDropdown = (index) => {
+    setOpenDropdown(openDropdown === index ? null : index);
+  };
+
   return (
     <motion.aside
       initial="closed"
       animate={isOpen ? "open" : "closed"}
       variants={sidebarVariants}
-      className="fixed top-16 bottom-0 bg-gray-50 shadow-md overflow-hidden flex flex-col z-40"
+      className="fixed top-16 bottom-0 bg-gray-100 shadow-md overflow-hidden flex flex-col z-40"
     >
       <motion.div
         className="h-full p-4 pt-4 flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-gray-500 scrollbar-track-gray-50"
@@ -256,15 +257,15 @@ const Sidebar = ({ isOpen }) => {
                     className={({ isActive }) =>
                       `text-sm font-medium group flex items-center p-2 rounded-xs transition-all duration-200 relative overflow-hidden ${
                         isActive
-                          ? "bg-gray-400 text-black"
-                          : "text-black hover:bg-gray-400"
+                          ? "bg-gray-500 text-gray-50"
+                          : "text-black hover:bg-gray-500 hover:text-gray-50"
                       }`
                     }
                   >
                     {({ isActive }) => (
                       <>
                         <motion.div
-                          className="absolute inset-0 bg-gray-400"
+                          className="absolute inset-0 bg-gray-500"
                           initial={{ opacity: 0 }}
                           whileHover={{ opacity: isActive ? 0 : 0.2 }}
                           transition={{ duration: 0.3 }}
@@ -272,14 +273,14 @@ const Sidebar = ({ isOpen }) => {
                         <div className="relative flex items-center">
                           <IconComponent
                             className={`w-5 h-5 mr-3 transition-colors duration-300 ${
-                              isActive ? "text-black" : "text-black group-hover:text-black"
+                              isActive ? "text-gray-50" : "text-black group-hover:text-gray-50"
                             }`}
                           />
                           <span
                             className={`${
                               isActive
-                                ? "text-black"
-                                : "text-black group-hover:text-black"
+                                ? "text-gray-50"
+                                : "text-black group-hover:text-gray-50"
                             } transition-colors duration-300`}
                           >
                             {item.label}
@@ -299,7 +300,13 @@ const Sidebar = ({ isOpen }) => {
                   animate={isOpen ? "visible" : "hidden"}
                   variants={itemVariants}
                 >
-                  <Dropdown label={item.label} links={item.links} icon={item.icon} />
+                  <Dropdown
+                    label={item.label}
+                    links={item.links}
+                    icon={item.icon}
+                    isOpen={openDropdown === index}
+                    toggleDropdown={() => handleToggleDropdown(index)}
+                  />
                 </motion.div>
               );
             }

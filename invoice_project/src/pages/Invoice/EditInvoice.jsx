@@ -52,15 +52,18 @@ const EditInvoice = () => {
   const [products, setProducts] = useState([]);
   const [services, setServices] = useState([]);
   const [invoiceItems, setInvoiceItems] = useState(
-    invoice?.items?.map((item) => ({
-      id: item.id,
-      itemName: item.name || (products.find((p) => p.id === item.product)?.name || ""),
-      quantity: item.quantity,
-      unitCost: parseFloat(item.unit_cost),
-      itemGst: item.total_gst ? item.total_gst.toString() : "0",
-      total: item.total ? item.total.toString() : "0",
-      item_type: item.item_type,
-    })) || [
+    invoice?.items?.map((item) => {
+      console.log("Mapping invoice item:", item); 
+      return {
+        id: item.id, 
+        itemName: item.name || "",
+        quantity: item.quantity,
+        unitCost: parseFloat(item.unit_cost),
+        itemGst: item.total_gst ? item.total_gst.toString() : "0",
+        total: item.total ? item.total.toString() : "0",
+        item_type: item.item_type,
+      };
+    }) || [
       { itemName: "", quantity: 1, unitCost: 0, itemGst: "0%", total: 0, item_type: "" },
     ]
   );
@@ -115,7 +118,24 @@ const EditInvoice = () => {
     ]);
   };
 
-  const removeItem = (index) => {
+  const removeItem = async (index) => {
+    const itemToRemove = invoiceItems[index];
+    console.log("Removing item:", itemToRemove);
+  
+    if (itemToRemove.id) {
+      try {
+        console.log(`Deleting item with ID: ${itemToRemove.id} from backend`);
+        await apiClient.delete(`invoices/invoice-items/${itemToRemove.id}/`);
+        console.log(`Successfully deleted item ${itemToRemove.id}`);
+      } catch (error) {
+        console.error("Error deleting item:", error.response?.data || error.message);
+        alert("Failed to delete item from the backend. Check the console.");
+        return;
+      }
+    } else {
+      console.log("Item has no ID, removing locally only");
+    }
+  
     setInvoiceItems(invoiceItems.filter((_, i) => i !== index));
   };
 
@@ -193,9 +213,23 @@ const EditInvoice = () => {
       const invoiceResponse = await apiClient.put(`invoices/invoices/${invoice.id}/`, invoiceData);
       console.log("Invoice Updated:", invoiceResponse.data);
 
+      const existingItemsResponse = await apiClient.get(`invoices/invoices/${invoice.id}/`);
+      const existingItemIds = existingItemsResponse.data.items.map((item) => item.id);
+      const currentItemIds = invoiceItems.map((item) => item.id).filter((id) => id);
+
+      const itemsToDelete = existingItemIds.filter((id) => !currentItemIds.includes(id));
+      for (const id of itemsToDelete) {
+        try {
+          await apiClient.delete(`invoices/invoice-items/${id}/`);
+          console.log(`Deleted item ${id}`);
+        } catch (error) {
+          console.error(`Error deleting item ${id}:`, error.response?.data || error.message);
+        }
+      }
+
       for (const item of invoiceItems) {
         const itemData = {
-          invoice: invoice.id, 
+          invoice: invoice.id,
           item_type: item.item_type || data.invoiceType,
           product:
             data.invoiceType === "product"
@@ -230,12 +264,11 @@ const EditInvoice = () => {
   const roundingDisplay = roundingDifference >= 0 ? `+${roundingDifference}` : roundingDifference;
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-8">
+    <div className="grid min-h-screen p-4">
+    <h2 className="text-xl font-extrabold mb-4 text-gray-800">
+      Edit Invoice: {invoice?.invoice_number}
+      </h2>
       <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-6xl">
-        <h2 className="text-2xl font-extrabold mb-6 text-gray-800 text-center">
-          Edit Invoice: {invoice?.invoice_number}
-        </h2>
-
         <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-4">
             <FormField
@@ -391,6 +424,7 @@ const EditInvoice = () => {
             {invoiceType && (
               <div>
                 <h3 className="font-bold text-sm mb-2 text-gray-700">Invoice Items</h3>
+Karen
                 <div className="rounded-lg">
                   <div className="grid grid-cols-12 gap-2 mb-2 font-semibold text-gray-700 text-sm">
                     <div className="col-span-3">Item Name</div>
@@ -438,7 +472,7 @@ const EditInvoice = () => {
                         readOnly={invoiceType === "product" && item.itemName !== ""}
                       />
                       <input
-                        className="w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 col-span-2"
+                        className="w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigfocus:outline-none focus:ring-1 focus:ring-indigo-500 col-span-2"
                         type="text"
                         value={item.itemGst}
                         readOnly
@@ -525,8 +559,7 @@ const EditInvoice = () => {
             {isSubmitting ? "Updating..." : "Update Invoice"}
           </button>
         </form>
-        <div className="mt-4 flex justify-start space-x-4">
-        </div>
+        <div className="mt-4 flex justify-start space-x-4"></div>
       </div>
     </div>
   );

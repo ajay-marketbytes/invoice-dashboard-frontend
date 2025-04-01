@@ -61,7 +61,7 @@ const ViewService = () => {
   };
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-100">
+    <div className="h-screen flex items-center justify-center">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-3xl py-6">
         <h2 className="text-xl text-gray-800 font-extrabold text-center mb-6">
           View Services

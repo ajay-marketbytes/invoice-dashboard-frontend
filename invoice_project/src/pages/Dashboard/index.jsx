@@ -49,50 +49,52 @@ const Dashboard = () => {
   }, []);
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-600">Loading dashboard...</div>;
+    return <div className="p-4 text-center text-gray-600">Loading dashboard...</div>;
   }
 
   if (error) {
-    return <div className="p-8 text-center text-red-600">{error}</div>;
+    return <div className="p-4 text-center text-red-600">{error}</div>;
   }
 
   return (
-    <div className="p-8 grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-      <CountCard
-        title="Invoices"
-        subtitle="Total number of invoices"
-        count={invoiceCount}
-      />
-      <CountCard
-        title="Products"
-        subtitle="Total number of products"
-        count={productCount}
-      />
-      <CountCard
-        title="Services"
-        subtitle="Total number of services"
-        count={serviceCount}
-      />
-      <CountCard
-        title="Bank Accounts"
-        subtitle="Total number of bank accounts"
-        count={bankAccountCount}
-      />
-      <CountCard
-        title="Addresses"
-        subtitle="Total number of branch addresses"
-        count={addressCount}
-      />
-      <CountCard
-        title="Clients"
-        subtitle="Total number of clients"
-        count={clientCount}
-      />
-      <CountCard
-        title="Taxes"
-        subtitle="Total number of taxes"
-        count={taxCount}
-      />
+    <div className="p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <CountCard
+          title="Invoices"
+          subtitle="Total number of invoices"
+          count={invoiceCount}
+        />
+        <CountCard
+          title="Products"
+          subtitle="Total number of products"
+          count={productCount}
+        />
+        <CountCard
+          title="Services"
+          subtitle="Total number of services"
+          count={serviceCount}
+        />
+        <CountCard
+          title="Bank Accounts"
+          subtitle="Total number of bank accounts"
+          count={bankAccountCount}
+        />
+        <CountCard
+          title="Addresses"
+          subtitle="Total number of branch addresses"
+          count={addressCount}
+        />
+        <CountCard
+          title="Clients"
+          subtitle="Total number of clients"
+          count={clientCount}
+        />
+        <CountCard
+          title="Taxes"
+          subtitle="Total number of taxes"
+          count={taxCount}
+        />
+      </div>
     </div>
   );
 };

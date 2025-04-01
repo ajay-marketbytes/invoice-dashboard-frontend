@@ -54,7 +54,7 @@ const AdditionalSettings = () => {
   };
 
   return (
-    <div className="h-full flex items-center justify-center bg-gray-100">
+    <div className="h-full flex items-center justify-center">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-6xl py-6 overflow-x-auto">
         <h2 className="text-xl text-gray-800 font-extrabold text-center mb-6">
           Change Invoice Series Prefix

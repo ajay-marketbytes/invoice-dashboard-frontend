@@ -12,10 +12,10 @@ const AddClient = () => {
     formState: { errors },
   } = useForm();
 
-  const [selectedTaxType, setSelectedTaxType] = useState(""); // Track selected tax type
+  const [selectedTaxType, setSelectedTaxType] = useState(""); 
 
   const handleTaxTypeChange = (event) => {
-    setSelectedTaxType(event.target.value); // Update state on change
+    setSelectedTaxType(event.target.value); 
   };
 
   const onSubmit = async (data) => {
@@ -46,7 +46,7 @@ const AddClient = () => {
   };
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-100">
+    <div className="h-screen flex items-center justify-center">
       <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-2xl">
         <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
           Add Client

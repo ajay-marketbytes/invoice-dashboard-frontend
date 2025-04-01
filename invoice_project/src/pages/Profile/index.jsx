@@ -91,12 +91,9 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen p-4">
       <div className="w-full max-w-4xl mx-auto">
-        <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">
-          Profile Settings
-        </h2>
-        <div className="flex justify-center mb-8">
+        <div className="flex justify-center my-8">
           <div className="relative">
             <img
               src={profileImage}

@@ -38,7 +38,7 @@ const Layout = () => {
       <div className="flex flex-1">
         <Sidebar isOpen={isSidebarOpen} />
         <motion.main
-          className="flex-1 py-20 px-4 bg-gradient-to-t from-gray-100 to-gray-200"
+          className="flex-1 py-20 px-4 bg-gradient-to-l from-gray-200 to-gray-300"
           initial={{ marginLeft: 300 }}
           animate={{ marginLeft: isSidebarOpen ? 300 : 0 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}

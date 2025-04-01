@@ -70,9 +70,9 @@ const InvoiceList = () => {
   if (error) return <p className="text-center text-red-600">{error}</p>;
 
   return (
-    <div className="container mx-auto mt-10 px-4">
-      <h1 className="text-center text-3xl font-bold text-gray-800">Final Invoice List</h1>
-      <div className="p-6">
+    <div className="container mx-auto p-4">
+      <h1 className="text-xl font-extrabold text-gray-800">Final Invoice List</h1>
+      <div className="py-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {invoices.map((invoice) => (
             <div

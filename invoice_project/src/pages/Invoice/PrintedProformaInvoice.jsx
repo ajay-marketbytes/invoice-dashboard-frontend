@@ -176,7 +176,7 @@ const PrintedProformaInvoice = () => {
             </div>
             <div className="w-1/2">
               <h4 className="font-bold">Invoice from:</h4>
-              <p>{branchDetails?.branch_address || "Unknown Branch"}</p>
+              <p>{branchDetails?.branch_name || "Unknown Branch"}</p>
               <p>{branchDetails?.branch_address || "N/A"}</p>
               <p><b>GSTIN:</b> {branchDetails?.gstin || "N/A"}</p>
               <p><b>P:</b> {branchDetails?.phone || "N/A"}</p>

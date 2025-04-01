@@ -127,6 +127,12 @@ const CreateInvoice = () => {
   }, [invoiceItems, watch("shipping"), watch("discount"), watch("amountPaid"), selectedTaxRate]);
 
   const onSubmit = async (data) => {
+    // Validate invoice items
+    if (invoiceItems.length === 0 || invoiceItems.some(item => !item.itemName)) {
+      alert("Please add at least one item with a valid name.");
+      return;
+    }
+
     try {
       const invoiceData = {
         invoice_type: data.invoiceType,
@@ -156,7 +162,7 @@ const CreateInvoice = () => {
           invoice: invoiceId,
           item_type: item.item_type || data.invoiceType,
           product: data.invoiceType === "product" ? (products.find(p => p.name === item.itemName)?.id || null) : null,
-          name: data.invoiceType === "service" ? item.itemName : null,
+          name: data.invoiceType === "service" ? item.itemName : (data.invoiceType === "product" ? null : item.itemName), // Ensure name is set for services
           quantity: item.quantity,
           unit_cost: item.unitCost.toString(),
         };
@@ -186,25 +192,16 @@ const CreateInvoice = () => {
   const roundingDisplay = roundingDifference >= 0 ? `+${roundingDifference}` : roundingDifference;
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-8">
-      <div className="bg-white p-8 rounded-lg shadow-xl w-full">
-        <h2 className="text-2xl font-extrabold mb-6 text-gray-800 text-center">
+    <div className="grid min-h-screen p-4">
+        <h2 className="text-xl font-extrabold mb-4 text-gray-800">
           Create New Invoice
         </h2>
-
+      <div className="bg-gray-50 p-8 rounded-lg shadow-xl w-full">
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="grid grid-cols-1 md:grid-cols-2 gap-8"
         >
           <div className="space-y-4">
-            {/* <FormField
-              label="Invoice Number"
-              name="invoiceNumber"
-              register={register}
-              error={errors.invoiceNumber}
-              placeholder="Enter invoice number"
-              required
-            /> */}
             <FormField
               label="Invoice Type"
               name="invoiceType"
@@ -371,6 +368,7 @@ const CreateInvoice = () => {
                         onChange={(e) => updateItem(index, "itemName", e.target.value)}
                         value={item.itemName}
                         className="col-span-3"
+                        required 
                       />
 
                       <input
@@ -385,8 +383,7 @@ const CreateInvoice = () => {
                       />
 
                       <input
-                        className={`w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 col-span-2 ${invoiceType === "product" && item.itemName ? "bg-gray-200 cursor-not-allowed" : ""
-                          }`}
+                        className={`w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 col-span-2 ${invoiceType === "product" && item.itemName ? "bg-gray-200 cursor-not-allowed" : ""}`}
                         type="number"
                         min="0"
                         step="0.01"
@@ -500,8 +497,7 @@ const CreateInvoice = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className={`bg-black text-white hover:bg-white hover:text-black border text-sm font-bold px-3 py-3 rounded w-full col-span-2 transition-colors duration-300 ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""
-              }`}
+            className={`bg-black text-white hover:bg-white hover:text-black border text-sm font-bold px-3 py-3 rounded w-full col-span-2 transition-colors duration-300 ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             {isSubmitting ? "Creating..." : "Create Invoice"}
           </button>

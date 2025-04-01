@@ -71,7 +71,7 @@ const FormField = ({
       {type === "select" ? (
         <div className="relative">
           <div
-            className="w-full p-2 border rounded bg-gray-100 text-gray-800 cursor-pointer flex justify-between items-center focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="w-full p-2 border border-gray-400 rounded bg-gray-100 text-gray-800 cursor-pointer flex justify-between items-center focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             onClick={() => setIsOpen(!isOpen)}
           >
             <span>{selectedOption || placeholder || "Select an option"}</span>
@@ -85,7 +85,7 @@ const FormField = ({
                 initial="hidden"
                 animate="visible"
                 exit="exit"
-                className="absolute z-10 w-full mt-1 bg-white border rounded shadow-lg max-h-60 overflow-y-auto"
+                className="absolute z-10 w-full mt-1 bg-white border border-gray-400 rounded shadow-lg max-h-60 overflow-y-auto"
               >
                 {options.map((option, index) => (
                   <motion.div
@@ -113,7 +113,7 @@ const FormField = ({
           showTimeSelect={type === "datetime-local"}
           dateFormat={type === "datetime-local" ? "yyyy-MM-dd HH:mm" : "yyyy-MM-dd"}
           placeholderText={placeholder || "Select date"}
-          className="w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-gray-400"
+          className="w-full p-2 border border-gray-400 rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 placeholder:text-gray-400"
           required={required}
         />
       ) : type === "radio" ? (
@@ -138,7 +138,7 @@ const FormField = ({
           placeholder={placeholder || `Enter ${label?.toLowerCase() || 'value'}`}
           {...register(name, { required: required && "This field is required" })}
           onChange={onChange}
-          className="w-full p-2 border rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-200"
+          className="w-full p-2 border border-gray-400 rounded bg-gray-100 text-gray-800 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:bg-gray-200"
           readOnly={readOnly}
           value={value}
           {...props}

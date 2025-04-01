@@ -198,7 +198,7 @@ const FinalInvoiceView = () => {
             </div>
             <div className="w-1/2">
               <h4 className="font-bold">Invoice from:</h4>
-              <p>{branchDetails?.branch_address || "Unknown Branch"}</p>
+              <p>{branchDetails?.branch_name || "Unknown Branch"}</p>
               <p>{branchDetails?.branch_address || "N/A"}</p>
               <p><b>GSTIN:</b> {branchDetails?.gstin || "N/A"}</p>
               <p><b>P:</b> {branchDetails?.phone || "N/A"}</p>
@@ -208,7 +208,7 @@ const FinalInvoiceView = () => {
         </div>
 
         <div className="text-center mb-5">
-          <h1 className="text-2xl font-bold">FINAL INVOICE</h1>
+          <h1 className="text-xl font-bold">FINAL INVOICE</h1>
         </div>
 
         <div className="flex justify-between mb-5">

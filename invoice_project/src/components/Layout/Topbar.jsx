@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, Settings, User, LogOut, Bell, Search } from 'lucide-react';
+import { Text, Settings, User, LogOut, Search } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDebounce } from 'use-debounce';
 import apiClient from '../../api/apiClient';
@@ -157,7 +157,7 @@ const Topbar = ({ toggleSidebar }) => {
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 h-16 bg-gray-50 shadow-md flex items-center justify-between px-4 z-50">
+    <div className="fixed top-0 left-0 right-0 h-16 bg-gray-100 shadow-md flex items-center justify-between px-4 z-50">
       <div className="flex items-center">
         <div className='flex items-center justify-center w-[255px]'>
           <img src={logo} alt="Crossroads" className="w-10 rounded-full" />
@@ -168,7 +168,7 @@ const Topbar = ({ toggleSidebar }) => {
         >
           <div className="absolute inset-0" />
           <Text
-            className="w-10 h-10 border p-2 border-gray-200 hover:border-none hover:bg-gray-200 rounded-lg text-gray-800 relative transition-colors duration-300 group-hover:text-gray-800"
+            className="w-10 h-10 border p-2 border-gray-300 hover:border-none hover:bg-gray-200 rounded-lg text-gray-800 relative transition-colors duration-300 group-hover:text-gray-800"
             strokeWidth={1.5}
           />
         </button>
@@ -220,21 +220,12 @@ const Topbar = ({ toggleSidebar }) => {
       </div>
       <div className="relative flex items-center mr-12">
         <button
-          className="p-2 rounded-xs transition-all duration-200 relative overflow-hidden group"
-        >
-          <div className="absolute inset-0" />
-          <Bell
-            className="w-10 h-10 border p-2 border-gray-200 hover:border-none hover:bg-gray-200 rounded-full text-gray-800 relative transition-colors duration-300 group-hover:text-gray-800"
-            strokeWidth={1.5}
-          />
-        </button>
-        <button
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           className="p-2 rounded-xs transition-all duration-200 relative overflow-hidden group"
         >
           <div className="absolute inset-0" />
           <Settings
-            className="w-10 h-10 border p-2 border-gray-200 hover:border-none hover:bg-gray-200 rounded-full text-gray-800 relative transition-colors duration-300 group-hover:text-gray-800"
+            className="w-10 h-10 border p-2 border-gray-300 hover:border-none hover:bg-gray-200 rounded-full text-gray-800 relative transition-colors duration-300 group-hover:text-gray-800"
             strokeWidth={1.5}
           />
         </button>

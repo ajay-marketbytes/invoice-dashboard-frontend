@@ -27,7 +27,7 @@ const AddTax = () => {
   };
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gray-100">
+    <div className="h-screen flex items-center justify-center">
       <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md">
         <h2 className="text-2xl font-bold text-gray-800 mb-4 text-center">
           Add Tax
